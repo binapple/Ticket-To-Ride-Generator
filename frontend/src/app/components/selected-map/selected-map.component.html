@@ -1,0 +1,11 @@
+<p>Your Selected Map</p>
+<div class="col-sm-12 col-md-6 col-lg-8">
+
+  <div leaflet
+       style="height: calc(80vw/1.41421); width: 80vw;margin: auto"
+       [leafletOptions]="options"
+       (leafletMapReady)="onMapReady($event)"
+  >
+  </div>
+  <!-- TODO back button to map selection -->
+</div>
