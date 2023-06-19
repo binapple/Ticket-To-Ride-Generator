@@ -1,17 +1,25 @@
 package com.example.backend.service.impl;
 
+import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.Scanner;
 
+import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
+import com.example.backend.endpoint.mapper.CityMapper;
 import com.example.backend.endpoint.mapper.MapMapper;
+import com.example.backend.entitiy.City;
 import com.example.backend.entitiy.Map;
+import com.example.backend.repository.CityRepository;
 import com.example.backend.repository.MapRepository;
 import com.example.backend.service.MapService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,11 +29,15 @@ public class MapServiceImpl implements MapService {
 
   private final MapMapper mapMapper;
   private final MapRepository mapRepository;
+  private final CityMapper cityMapper;
+  private final CityRepository cityRepository;
 
   @Autowired
-  public MapServiceImpl(MapMapper mapMapper, MapRepository mapRepository) {
+  public MapServiceImpl(MapMapper mapMapper, MapRepository mapRepository, CityMapper cityMapper, CityRepository cityRepository) {
     this.mapMapper = mapMapper;
     this.mapRepository = mapRepository;
+    this.cityMapper = cityMapper;
+    this.cityRepository = cityRepository;
   }
 
   @Override
@@ -35,13 +47,11 @@ public class MapServiceImpl implements MapService {
 
     map = mapRepository.save(map);
 
-    getCities(map.getId());
-
     return mapMapper.mapToCreateMapDto(map);
   }
 
   @Override
-  public void getCities(Long id) {
+  public List<CityDto> getInitialCities(Long id) {
 
     Map map = mapRepository.getReferenceById(id);
     String boundary = map.getSouthWestBoundary().x + "," +
@@ -75,16 +85,51 @@ public class MapServiceImpl implements MapService {
 
         scans.close();
 
-        System.out.println(responseString);
+        //System.out.println(responseString);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(String.valueOf(responseString));
+        JsonNode cityElements = jsonNode.get("elements");
+
+        cityElements.forEach(
+            node-> {
+              City newCity = new City();
+
+              Point2D.Float location = new Point2D.Float();
+              location.y = node.get("lat").floatValue();
+              location.x = node.get("lon").floatValue();
+              newCity.setLocation(location);
+
+              JsonNode tags = node.get("tags");
+
+              newCity.setName(tags.get("name").asText());
+              JsonNode population = tags.get("population");
+              if(population == null) {
+                newCity.setPopulation(0L);
+              }
+              else {
+                newCity.setPopulation(population.asLong());
+              }
+
+              cityRepository.save(newCity);
+            }
+        );
+
 
       }
 
     } catch (MalformedURLException e) {
       throw new RuntimeException("MalformedURL "+e.getMessage());
     } catch (IOException e) {
-      throw new RuntimeException("IOException "+e.getMessage());
+      throw new RuntimeException("IOException " + e.getMessage());
     }
 
+    return cityMapper.cityListToCityDtoList(cityRepository.findAll());
 
+  }
+
+  @Override
+  public List<CityDto> getCities(Long id) {
+    return null;
   }
 }

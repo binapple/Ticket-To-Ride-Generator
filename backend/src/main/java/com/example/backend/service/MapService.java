@@ -1,7 +1,9 @@
 package com.example.backend.service;
 
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
+import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
 
 public interface MapService {
@@ -16,11 +18,20 @@ public interface MapService {
   CreateMapDto create(CreateMapDto createMapDto);
 
   /**
-   * Gets the 50 largest Cities of the Map from OpenStreetMap/Overpass API
+   * Gets the cities of the Map from OpenStreetMap/Overpass API
    *
    * @param id of the Map
    * @return a list of Cities
    */
-  void getCities(Long id);
+  List<CityDto> getInitialCities(Long id);
+
+  /**
+   * Gets the cities of the Map from local storage
+   *
+   * @param id of the Map
+   * @return a list of Cities
+   */
+  List<CityDto> getCities(Long id);
+
 
 }
