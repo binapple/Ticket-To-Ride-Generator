@@ -38,19 +38,18 @@ public class MapEndpoint {
 
     List<CityDto> cityDtoList = mapService.getCities(id);
 
-    if (cityDtoList != null) {
-
+    if (cityDtoList.isEmpty()) {
       cityDtoList = mapService.getInitialCities(id);
-
-      cityDtoList.sort(
-          new Comparator<CityDto>() {
-            @Override
-            public int compare(CityDto o1, CityDto o2) {
-              return o2.getPopulation().compareTo(o1.getPopulation());
-            }
-          }
-      );
     }
+
+    cityDtoList.sort(
+        new Comparator<CityDto>() {
+          @Override
+          public int compare(CityDto o1, CityDto o2) {
+            return o2.getPopulation().compareTo(o1.getPopulation());
+          }
+        }
+    );
 
     return cityDtoList;
   }

@@ -6,8 +6,10 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 
 import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
@@ -111,9 +113,22 @@ public class MapServiceImpl implements MapService {
                 newCity.setPopulation(population.asLong());
               }
 
-              cityRepository.save(newCity);
+
+              List<City> alreadySavedCity = cityRepository.findCityByNameAndPopulation(newCity.getName(), newCity.getPopulation());
+              if(alreadySavedCity.size()==0) {
+                map.addCity(newCity);
+                cityRepository.save(newCity);
+
+              }
+              else
+              {
+                map.addCity(alreadySavedCity.get(0));
+                cityRepository.save(alreadySavedCity.get(0));
+              }
             }
         );
+
+        mapRepository.save(map);
 
 
       }
@@ -124,12 +139,12 @@ public class MapServiceImpl implements MapService {
       throw new RuntimeException("IOException " + e.getMessage());
     }
 
-    return cityMapper.cityListToCityDtoList(cityRepository.findAll());
+    return cityMapper.cityListToCityDtoList(cityRepository.findCitiesByMapsId(id));
 
   }
 
   @Override
   public List<CityDto> getCities(Long id) {
-    return null;
+    return cityMapper.cityListToCityDtoList(cityRepository.findCitiesByMapsId(id));
   }
 }

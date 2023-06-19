@@ -1,12 +1,17 @@
 package com.example.backend.entitiy;
 
 import java.awt.geom.Point2D;
+import java.util.HashSet;
+import java.util.Set;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 
 @Entity (name = "map")
 public class Map {
@@ -28,6 +33,12 @@ public class Map {
 
   @Column(columnDefinition = "integer default 5")
   private int zoom;
+  @ManyToMany
+  @JoinTable(
+      name = "map_city",
+      joinColumns = @JoinColumn(name = "map_id"),
+      inverseJoinColumns =  @JoinColumn(name = "city_id"))
+  private Set<City> cities = new HashSet<>();
 
   public void setId(Long id) {
     this.id = id;
@@ -76,4 +87,24 @@ public class Map {
   public void setZoom(int zoom) {
     this.zoom = zoom;
   }
+
+  public Set<City> getCities() {
+    return cities;
+  }
+
+  public void setCities(Set<City> cities) {
+    this.cities = cities;
+  }
+
+  public void addCity(City city) {
+    this.cities.add(city);
+    city.getMaps().add(this);
+  }
+
+  public void removeCity(City city)
+  {
+    this.cities.remove(city);
+    city.getMaps().remove(this);
+  }
+
 }

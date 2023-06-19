@@ -1,11 +1,15 @@
 package com.example.backend.entitiy;
 
 import java.awt.geom.Point2D;
+import java.util.HashSet;
+import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
 
 @Entity (name = "city")
 public class City {
@@ -17,6 +21,9 @@ public class City {
 
   private String name;
   private Long population;
+
+  @ManyToMany (mappedBy = "cities")
+  private Set<Map> maps = new HashSet<>();
 
   public Long getId() {
     return id;
@@ -49,4 +56,13 @@ public class City {
   public void setPopulation(Long population) {
     this.population = population;
   }
+
+  public Set<Map> getMaps() {
+    return maps;
+  }
+
+  public void setMaps(Set<Map> maps) {
+    this.maps = maps;
+  }
+
 }
