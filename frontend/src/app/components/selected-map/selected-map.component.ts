@@ -1,6 +1,10 @@
 import { Component } from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {LatLng, latLng, LatLngBounds, Map, PanOptions, tileLayer, ZoomOptions} from "leaflet";
+import {MapService} from "../../services/map.service";
+import {MapDto} from '../../dtos/map';
+import {dateTimestampProvider} from "rxjs/internal/scheduler/dateTimestampProvider";
+import {Point2D} from "../../dtos/point2d";
 
 @Component({
   selector: 'app-selected-map',
@@ -22,6 +26,7 @@ export class SelectedMapComponent {
   northEast: LatLng = new LatLng(0,0);
   southWest: LatLng = new LatLng(0,0);
   southEast: LatLng = new LatLng(0,0);
+  zoom = 0;
 
   // Leaflet options
   options = {
@@ -37,7 +42,14 @@ export class SelectedMapComponent {
     tap: false,
     center: latLng(this.optionsSpec.center)
   };
-  constructor(private route : ActivatedRoute) {
+
+  emptyPoint: Point2D = new Point2D(0,0);
+  savedMap = new MapDto(this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0);
+  mapLoaded = false;
+
+  constructor(private route : ActivatedRoute,
+              private mapService : MapService,
+              private router: Router) {
   }
 
   ngOnInit(): void {
@@ -66,7 +78,39 @@ export class SelectedMapComponent {
     this.northEast = this.bounds.getNorthEast();
     this.southWest = this.bounds.getSouthWest();
     this.southEast = this.bounds.getSouthEast();
-    console.log("nW: " + this.northWest + " sE: " + this.southEast);
+    this.zoom = map.getZoom();
+
+    this.mapLoaded = true;
+
   }
 
+  backButton() {
+    this.router.navigate(['map/']);
+  }
+
+  loadCities() {
+    const northEastBoundary: Point2D = new Point2D(this.northEast.lng, this.northEast.lat);
+    const northWestBoundary: Point2D = new Point2D(this.northWest.lng, this.northWest.lat);
+    const southEastBoundary: Point2D = new Point2D(this.southEast.lng, this.southEast.lat);
+    const southWestBoundary: Point2D = new Point2D(this.southWest.lng, this.southWest.lat);
+
+    const newMap: MapDto = new MapDto(northWestBoundary,southWestBoundary,northEastBoundary,southEastBoundary,this.zoom);
+
+
+    this.mapService.createMap(newMap).subscribe( {
+        next: data => {
+          this.savedMap = data;
+          console.log(this.savedMap);
+          if (this.savedMap.id != null) {
+            this.mapService.getCities(this.savedMap.id).subscribe({
+              next: data => {
+                console.log(data);
+              }
+            })
+          }
+        }
+      }
+    );
+
+  }
 }

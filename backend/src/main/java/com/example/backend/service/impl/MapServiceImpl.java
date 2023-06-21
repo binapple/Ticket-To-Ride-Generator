@@ -56,10 +56,10 @@ public class MapServiceImpl implements MapService {
   public List<CityDto> getInitialCities(Long id) {
 
     Map map = mapRepository.getReferenceById(id);
-    String boundary = map.getSouthWestBoundary().x + "," +
-        map.getSouthWestBoundary().y + "," +
-        map.getNorthEastBoundary().x + "," +
-        map.getNorthEastBoundary().y;
+    String boundary = map.getSouthWestBoundary().y + "," +
+        map.getSouthWestBoundary().x + "," +
+        map.getNorthEastBoundary().y + "," +
+        map.getNorthEastBoundary().x;
 
     String urlUnencoded = "[out:json]; node [\"place\"=\"city\"] (" + boundary + "); out body;";
 
@@ -104,7 +104,19 @@ public class MapServiceImpl implements MapService {
 
               JsonNode tags = node.get("tags");
 
-              newCity.setName(tags.get("name").asText());
+              //This game needs a name for a city to work -> no name = not usable
+              boolean nameAvailable = true;
+              JsonNode name = tags.get("name");
+              if(name == null)
+              {
+                nameAvailable = false;
+              }
+              else {
+                newCity.setName(name.asText());
+              }
+
+
+
               JsonNode population = tags.get("population");
               if(population == null) {
                 newCity.setPopulation(0L);
@@ -114,16 +126,16 @@ public class MapServiceImpl implements MapService {
               }
 
 
-              List<City> alreadySavedCity = cityRepository.findCityByNameAndPopulation(newCity.getName(), newCity.getPopulation());
-              if(alreadySavedCity.size()==0) {
-                map.addCity(newCity);
-                cityRepository.save(newCity);
+              if(nameAvailable) {
+                List<City> alreadySavedCity = cityRepository.findCityByNameAndPopulation(newCity.getName(), newCity.getPopulation());
+                if (alreadySavedCity.size() == 0) {
+                  map.addCity(newCity);
+                  cityRepository.save(newCity);
 
-              }
-              else
-              {
-                map.addCity(alreadySavedCity.get(0));
-                cityRepository.save(alreadySavedCity.get(0));
+                } else {
+                  map.addCity(alreadySavedCity.get(0));
+                  cityRepository.save(alreadySavedCity.get(0));
+                }
               }
             }
         );

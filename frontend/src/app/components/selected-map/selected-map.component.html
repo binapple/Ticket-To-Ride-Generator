@@ -1,4 +1,4 @@
-<p>Your Selected Map</p>
+<p>Your selected Map</p>
 <div class="col-sm-12 col-md-6 col-lg-8">
 
   <div leaflet
@@ -7,5 +7,8 @@
        (leafletMapReady)="onMapReady($event)"
   >
   </div>
-  <!-- TODO back button to map selection -->
+
+  <button (click)="backButton()">Back to Map selection</button>
+  <button (click)="loadCities()" *ngIf="mapLoaded">Load Cities for this Map</button>
+
 </div>

@@ -7,6 +7,7 @@ import { AppRoutingModule } from './app-routing.module';
 import {LeafletModule} from "@asymmetrik/ngx-leaflet";
 import {FormsModule} from "@angular/forms";
 import { SelectedMapComponent } from './components/selected-map/selected-map.component';
+import {HttpClientModule} from "@angular/common/http";
 
 
 @NgModule({
@@ -20,7 +21,8 @@ import { SelectedMapComponent } from './components/selected-map/selected-map.com
     BrowserModule,
     AppRoutingModule,
     LeafletModule,
-    FormsModule
+    FormsModule,
+    HttpClientModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

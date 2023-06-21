@@ -8,6 +8,7 @@ import com.example.backend.endpoint.dto.CreateMapDto;
 import com.example.backend.service.MapService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,12 +28,14 @@ public class MapEndpoint {
   public MapEndpoint(MapService mapService) {  this.mapService = mapService;  }
 
   @PostMapping
+  @CrossOrigin(origins = "http://localhost:4200")
   @ResponseStatus(HttpStatus.CREATED)
   public CreateMapDto createMap(@RequestBody CreateMapDto createMapDto) {
     return mapService.create(createMapDto);
   }
 
   @GetMapping(value = "/cities/{id}")
+  @CrossOrigin(origins = "http://localhost:4200")
   @ResponseStatus(HttpStatus.OK)
   public List<CityDto> getCities(@PathVariable Long id) {
 
