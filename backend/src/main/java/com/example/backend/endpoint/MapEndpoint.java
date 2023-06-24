@@ -6,6 +6,7 @@ import java.util.List;
 import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
 import com.example.backend.service.MapService;
+import jakarta.persistence.Column;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -56,4 +57,23 @@ public class MapEndpoint {
 
     return cityDtoList;
   }
+
+  @GetMapping (value = "/towns/{id}")
+  @CrossOrigin (origins = "http://localhost:4200")
+  @ResponseStatus(HttpStatus.OK)
+  public List<CityDto> getTowns(@PathVariable Long id) {
+    List<CityDto> cityDtoList = mapService.getTowns(id);
+
+    cityDtoList.sort(
+        new Comparator<CityDto>() {
+          @Override
+          public int compare(CityDto o1, CityDto o2) {
+            return o2.getPopulation().compareTo(o1.getPopulation());
+          }
+        }
+    );
+
+    return cityDtoList;
+  }
+
 }

@@ -55,13 +55,29 @@ public class MapServiceImpl implements MapService {
   @Override
   public List<CityDto> getInitialCities(Long id) {
 
+    return getCityDtos(id, "city");
+
+  }
+
+  @Override
+  public List<CityDto> getCities(Long id) {
+    return cityMapper.cityListToCityDtoList(cityRepository.findCitiesByMapsId(id));
+  }
+
+  @Override
+  public List<CityDto> getTowns(Long id) {
+    return getCityDtos(id, "town");
+
+  }
+
+  private List<CityDto> getCityDtos(Long id, String place) {
     Map map = mapRepository.getReferenceById(id);
     String boundary = map.getSouthWestBoundary().y + "," +
         map.getSouthWestBoundary().x + "," +
         map.getNorthEastBoundary().y + "," +
         map.getNorthEastBoundary().x;
 
-    String urlUnencoded = "[out:json]; node [\"place\"=\"city\"] (" + boundary + "); out body;";
+    String urlUnencoded = "[out:json]; node [\"place\"=\""+ place +"\"] (" + boundary + "); out body;";
 
     String urlEncoded = URLEncoder.encode(urlUnencoded);
 
@@ -151,12 +167,6 @@ public class MapServiceImpl implements MapService {
       throw new RuntimeException("IOException " + e.getMessage());
     }
 
-    return cityMapper.cityListToCityDtoList(cityRepository.findCitiesByMapsId(id));
-
-  }
-
-  @Override
-  public List<CityDto> getCities(Long id) {
     return cityMapper.cityListToCityDtoList(cityRepository.findCitiesByMapsId(id));
   }
 }

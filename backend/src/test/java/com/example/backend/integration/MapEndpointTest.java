@@ -82,16 +82,45 @@ public class MapEndpointTest {
   public void givenMap_whenGetCitiesIsCalled_thenCitiesAreReturnedAsList() throws Exception {
     CreateMapDto createMapDto = new CreateMapDto();
 
-    createMapDto.setNorthWestBoundary(new Point2D.Float(66.791909f, -34.628906f));
-    createMapDto.setNorthEastBoundary(new Point2D.Float(66.791909f, 66.621094f));
-    createMapDto.setSouthWestBoundary(new Point2D.Float(18.729502f, -34.628906f));
-    createMapDto.setSouthEastBoundary(new Point2D.Float(18.729502f, 66.621094f));
+    createMapDto.setNorthWestBoundary(new Point2D.Float(-34.628906f, 66.791909f));
+    createMapDto.setNorthEastBoundary(new Point2D.Float(66.621094f, 66.791909f));
+    createMapDto.setSouthWestBoundary(new Point2D.Float(-34.628906f, 18.729502f));
+    createMapDto.setSouthEastBoundary(new Point2D.Float(66.621094f, 18.729502f));
     createMapDto.setZoom(4);
 
     CreateMapDto saved = mapService.create(createMapDto);
 
     byte[] body = mockMvc.perform(MockMvcRequestBuilders
                                       .get("/api/maps/cities/"+saved.getId())
+                                      .contentType(MediaType.APPLICATION_JSON)
+                         ).andExpect(status().isOk())
+                         .andReturn().getResponse().getContentAsByteArray();
+
+
+
+    List<CityDto> cityDtos = objectMapper.readerFor(CityDto.class).<CityDto>readValues(body).readAll();
+
+    assertAll(
+        () -> assertNotEquals(cityDtos, null)
+    );
+
+  }
+
+  @Test
+  public void givenMap_whenCitiesLoadedAndGetTownsIsCalled_thenTownsAreCalled() throws Exception{
+
+    CreateMapDto createMapDto = new CreateMapDto();
+
+    createMapDto.setNorthWestBoundary(new Point2D.Float(13.07f, 48.29f));
+    createMapDto.setNorthEastBoundary(new Point2D.Float(17.35f, 48.29f));
+    createMapDto.setSouthWestBoundary(new Point2D.Float(13.07f, 46.21f));
+    createMapDto.setSouthEastBoundary(new Point2D.Float(17.35f, 46.21f));
+    createMapDto.setZoom(4);
+
+    CreateMapDto saved = mapService.create(createMapDto);
+
+    byte[] body = mockMvc.perform(MockMvcRequestBuilders
+                                      .get("/api/maps/towns/"+saved.getId())
                                       .contentType(MediaType.APPLICATION_JSON)
                          ).andExpect(status().isOk())
                          .andReturn().getResponse().getContentAsByteArray();

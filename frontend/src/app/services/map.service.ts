@@ -26,13 +26,24 @@ export class MapService {
 
 
   /**
-   * gets all timeslots belonging to own trainer
+   * gets all cities belonging to map
    *
    * @param id of map saved on server
    *
-   * @returns an OverviewTimeslot representation of the saved timeslots
+   * @returns a list of cites
    */
   getCities (id: number): Observable<City[]> {
     return this.httpClient.get<City[]>(this.baseURI + '/maps/cities/' + id);
+  }
+
+  /**
+   * gets all towns belonging to map
+   *
+   * @param id of map saved on server
+   *
+   * @returns a list of cities (towns are also saved as cities)
+   */
+  getTowns(id: number):Observable<City[]> {
+    return this.httpClient.get<City[]>(this.baseURI + '/maps/towns/' + id);
   }
 }

@@ -1,6 +1,7 @@
 import {Component} from '@angular/core';
-import {latLng, LatLng, tileLayer, Map, LatLngBounds} from 'leaflet';
-import {Router} from "@angular/router";
+import {latLng, LatLng, tileLayer,} from 'leaflet';
+import {NavigationExtras, Router} from "@angular/router";
+import {MapService} from "../../services/map.service";
 
 
 @Component({
@@ -32,7 +33,8 @@ export class MapComponent {
   lat = this.center.lat;
   lng = this.center.lng;
 
-  constructor(private router : Router) {
+  constructor(private router : Router,
+              private mapService: MapService) {
   }
 
   // Output binding for center
@@ -55,8 +57,19 @@ export class MapComponent {
   }
 
 
+
   selectedMap() {
     this.doApply();
-    this.router.navigate(['/map/selected', {z: this.zoom, x: this.center.lat, y: this.center.lng}]);
+
+    const navigationExtras: NavigationExtras = {
+      queryParams: {
+        "z": JSON.stringify(this.zoom),
+        "x": JSON.stringify(this.center.lat),
+        "y": JSON.stringify(this.center.lng),
+      }
+    }
+
+    this.router.navigate(['/map/selected'], navigationExtras);
+
   }
 }

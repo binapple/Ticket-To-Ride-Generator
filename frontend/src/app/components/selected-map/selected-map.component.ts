@@ -2,24 +2,17 @@ import {Component, NgZone} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {
   Circle,
-  circle, control,
+  circle,
   LatLng,
   latLng,
-  LatLngBounds,
-  Layer,
   Map,
-  marker,
-  PanOptions,
-  polygon,
   tileLayer,
-  ZoomOptions
 } from "leaflet";
 import {MapService} from "../../services/map.service";
 import {MapDto} from '../../dtos/map';
-import {dateTimestampProvider} from "rxjs/internal/scheduler/dateTimestampProvider";
 import {Point2D} from "../../dtos/point2d";
 import {City} from "../../dtos/city";
-import layers = control.layers;
+
 
 @Component({
   selector: 'app-selected-map',
@@ -34,14 +27,6 @@ export class SelectedMapComponent {
     zoom: 4,
     center: [ 48, 16 ]
   };
-
-  //used for coordinates
-  bounds:LatLngBounds = new LatLngBounds(new LatLng(0,0), new LatLng(0,0));
-  northWest: LatLng = new LatLng(0,0);
-  northEast: LatLng = new LatLng(0,0);
-  southWest: LatLng = new LatLng(0,0);
-  southEast: LatLng = new LatLng(0,0);
-  zoom = 0;
 
 
   // Leaflet options
@@ -60,7 +45,7 @@ export class SelectedMapComponent {
   };
 
   emptyPoint: Point2D = new Point2D(0,0);
-  savedMap = new MapDto(this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0);
+  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0);
   mapLoaded = false;
   cities: City[] = [];
   selectedCities: City[] = [];
@@ -68,6 +53,7 @@ export class SelectedMapComponent {
     circle([ 46.95, -122 ], { radius: 0 }),
   ];
   searchCity: City = new City('',0,new Point2D(0,0));
+  citiesLoaded = false;
 
   constructor(private route : ActivatedRoute,
               private mapService : MapService,
@@ -76,9 +62,14 @@ export class SelectedMapComponent {
   }
 
   ngOnInit(): void {
-    this.optionsSpec.zoom = this.route.snapshot.paramMap.get('z');
-    const x = this.route.snapshot.paramMap.get('x');
-    const y = this.route.snapshot.paramMap.get('y');
+    let x;
+    let y;
+    this.route.queryParams.subscribe(params => {
+      this.optionsSpec.zoom = JSON.parse(params["z"]);
+      x = JSON.parse(params["x"]);
+      y = JSON.parse(params["y"]);
+    })
+
     this.optionsSpec.center = [ x, y ];
     this.options = {
       layers: [tileLayer(this.optionsSpec.layers[0].url, {attribution: this.optionsSpec.layers[0].attribution})],
@@ -96,14 +87,35 @@ export class SelectedMapComponent {
   }
 
   onMapReady(map: Map) {
-    this.bounds = map.getBounds();
-    this.northWest = this.bounds.getNorthWest();
-    this.northEast = this.bounds.getNorthEast();
-    this.southWest = this.bounds.getSouthWest();
-    this.southEast = this.bounds.getSouthEast();
-    this.zoom = map.getZoom();
+    const bounds = map.getBounds();
+    const northWest = bounds.getNorthWest();
+    const northEast = bounds.getNorthEast();
+    const southWest = bounds.getSouthWest();
+    const southEast = bounds.getSouthEast();
+    const zoom = map.getZoom();
 
-    this.mapLoaded = true;
+    const northEastBoundary: Point2D = new Point2D(northEast.lng, northEast.lat);
+    const northWestBoundary: Point2D = new Point2D(northWest.lng, northWest.lat);
+    const southEastBoundary: Point2D = new Point2D(southEast.lng, southEast.lat);
+    const southWestBoundary: Point2D = new Point2D(southWest.lng, southWest.lat);
+
+
+    this.savedMap.zoom = zoom;
+    this.savedMap.northEastBoundary = northEastBoundary;
+    this.savedMap.northWestBoundary = northWestBoundary;
+    this.savedMap.southEastBoundary = southEastBoundary;
+    this.savedMap.southWestBoundary = southWestBoundary;
+
+
+    this.mapService.createMap(this.savedMap).subscribe({
+      next: data => {
+        this.savedMap = data;
+        console.log(this.savedMap);
+        this.mapLoaded = true;
+      }
+    });
+
+
 
   }
 
@@ -112,34 +124,17 @@ export class SelectedMapComponent {
   }
 
   loadCities() {
-    const northEastBoundary: Point2D = new Point2D(this.northEast.lng, this.northEast.lat);
-    const northWestBoundary: Point2D = new Point2D(this.northWest.lng, this.northWest.lat);
-    const southEastBoundary: Point2D = new Point2D(this.southEast.lng, this.southEast.lat);
-    const southWestBoundary: Point2D = new Point2D(this.southWest.lng, this.southWest.lat);
-
-    const newMap: MapDto = new MapDto(northWestBoundary,southWestBoundary,northEastBoundary,southEastBoundary,this.zoom);
-
-
-    this.mapService.createMap(newMap).subscribe( {
+    if (this.savedMap.id != null) {
+      this.mapService.getCities(this.savedMap.id).subscribe({
         next: data => {
-          this.savedMap = data;
-          if (this.savedMap.id != null) {
-            this.mapService.getCities(this.savedMap.id).subscribe({
-              next: data => {
-                this.cities = data;
-                console.log(this.cities.length);
-                this.selectedCities = this.cities.slice(0,50);
-                this.cities = this.cities.slice(50, this.cities.length+1);
-                console.log(this.cities.length);
-                this.addCitiesToMap(this.selectedCities);
-
-              }
-            })
-          }
+          this.cities = data;
+          this.selectedCities = this.cities.slice(0, 50);
+          this.cities = this.cities.slice(50, this.cities.length + 1);
+          this.addCitiesToMap(this.selectedCities);
+          this.citiesLoaded = true;
         }
-      }
-    );
-
+      })
+    }
   }
 
   private addCitiesToMap(array: City[])
@@ -197,5 +192,19 @@ export class SelectedMapComponent {
 
     this.layers = [];
     this.addCitiesToMap(this.selectedCities);
+  }
+
+  loadTowns() {
+    if (this.savedMap.id != null) {
+      this.mapService.getTowns(this.savedMap.id).subscribe({
+        next: data => {
+          this.cities = data;
+          this.selectedCities = this.cities.slice(0,50);
+          this.cities = this.cities.slice(50, this.cities.length+1);
+          this.layers = [];
+          this.addCitiesToMap(this.selectedCities);
+        }
+      })
+    }
   }
 }

@@ -34,4 +34,11 @@ public interface MapService {
   List<CityDto> getCities(Long id);
 
 
+  /**
+   * Gets the towns of the Map from OpenStreetMap/Overpass API
+   *
+   * @param id of the Map
+   * @return a list of Cities
+   */
+  List<CityDto> getTowns(Long id);
 }
