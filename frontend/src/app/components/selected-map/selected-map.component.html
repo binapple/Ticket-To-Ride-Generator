@@ -1,14 +1,67 @@
-<p>Your selected Map</p>
+<p>Your selected Map (Double click on Cities to remove them)</p>
 <div class="col-sm-12 col-md-6 col-lg-8">
 
   <div leaflet
        style="height: calc(80vw/1.41421); width: 80vw;margin: auto"
        [leafletOptions]="options"
        (leafletMapReady)="onMapReady($event)"
+       [leafletLayers]="layers"
   >
   </div>
 
+
   <button (click)="backButton()">Back to Map selection</button>
   <button (click)="loadCities()" *ngIf="mapLoaded">Load Cities for this Map</button>
+  <input type="text" [(ngModel)]="searchCity.name">
+<br>
 
+  <div class="row">
+  <div class="col-md-6">
+  <table>
+    <thead>
+    <tr>
+      <th>Added Cities</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let city of selectedCities">
+        <td>{{city.name}}</td>
+      <td>
+        <button
+          class="btn btn-sm"
+          (click)="removeCity(city)"
+          >
+          <i class="bi bi-x-circle"></i>
+        </button>
+      </td>
+    </tr>
+    </tbody>
+
+  </table>
+  </div>
+
+  <div class="col-md-6">
+  <table>
+    <thead>
+    <tr>
+      <th>Choose Cities to Add</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let city of cities | searchCity: searchCity">
+      <td>{{city.name}}</td>
+      <td>
+        <button
+          class="btn btn-sm"
+          (click)="addCity(city)"
+        >
+          <i class="bi bi-check-circle"></i>
+        </button>
+      </td>
+    </tr>
+    </tbody>
+
+  </table>
+  </div>
+  </div>
 </div>

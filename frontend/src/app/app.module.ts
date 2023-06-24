@@ -8,6 +8,8 @@ import {LeafletModule} from "@asymmetrik/ngx-leaflet";
 import {FormsModule} from "@angular/forms";
 import { SelectedMapComponent } from './components/selected-map/selected-map.component';
 import {HttpClientModule} from "@angular/common/http";
+import {SearchCityPipe} from "./components/selected-map/search-city.pipe";
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 
 @NgModule({
@@ -15,6 +17,7 @@ import {HttpClientModule} from "@angular/common/http";
     AppComponent,
     MapComponent,
     SelectedMapComponent,
+    SearchCityPipe
 
   ],
   imports: [
@@ -23,6 +26,7 @@ import {HttpClientModule} from "@angular/common/http";
     LeafletModule,
     FormsModule,
     HttpClientModule,
+    NgbModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

@@ -1,3 +1,5 @@
+import {LatLng} from "leaflet";
+
 export class Point2D {
   x: number;
   y: number;
