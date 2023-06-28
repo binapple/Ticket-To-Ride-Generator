@@ -6,6 +6,7 @@ import java.util.List;
 import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
 import com.example.backend.service.MapService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -132,6 +133,33 @@ public class MapEndpointTest {
     assertAll(
         () -> assertNotEquals(cityDtos, null)
     );
+
+  }
+
+
+  @Test
+  public void givenMapWithSelectedCities_whenSavingCities_thenCoordinatesSavedAsMapPoints() throws Exception {
+    CreateMapDto createMapDto = new CreateMapDto();
+
+    createMapDto.setNorthWestBoundary(new Point2D.Float(13.07f, 48.29f));
+    createMapDto.setNorthEastBoundary(new Point2D.Float(17.35f, 48.29f));
+    createMapDto.setSouthWestBoundary(new Point2D.Float(13.07f, 46.21f));
+    createMapDto.setSouthEastBoundary(new Point2D.Float(17.35f, 46.21f));
+    createMapDto.setZoom(4);
+
+    CreateMapDto saved = mapService.create(createMapDto);
+
+    mapService.getInitialCities(saved.getId());
+    List<CityDto> selectedCities = mapService.getTowns(saved.getId());
+
+    MvcResult mvcResult = this.mockMvc.perform(post("/api/maps/selected")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(selectedCities)))
+            .andExpect(status().isCreated())
+            .andDo(print())
+            .andReturn();
+
+
 
   }
 

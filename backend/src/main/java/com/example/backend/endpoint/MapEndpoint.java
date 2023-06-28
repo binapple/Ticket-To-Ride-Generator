@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
+import com.example.backend.endpoint.dto.MapPointDto;
 import com.example.backend.service.MapService;
 import jakarta.persistence.Column;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,13 @@ public class MapEndpoint {
   @ResponseStatus(HttpStatus.CREATED)
   public CreateMapDto createMap(@RequestBody CreateMapDto createMapDto) {
     return mapService.create(createMapDto);
+  }
+
+  @PostMapping
+  @CrossOrigin(origins = "http://localhost:4200")
+  @ResponseStatus(HttpStatus.CREATED)
+  public List<MapPointDto> createMapPoints(@RequestBody List<CityDto> cityDtos) {
+      return null;
   }
 
   @GetMapping(value = "/cities/{id}")
