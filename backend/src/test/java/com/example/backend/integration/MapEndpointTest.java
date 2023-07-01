@@ -149,10 +149,24 @@ public class MapEndpointTest {
 
     CreateMapDto saved = mapService.create(createMapDto);
 
-    mapService.getInitialCities(saved.getId());
-    List<CityDto> selectedCities = mapService.getTowns(saved.getId());
+    byte[] body = mockMvc.perform(MockMvcRequestBuilders
+                                      .get("/api/maps/cities/"+saved.getId())
+                                      .contentType(MediaType.APPLICATION_JSON)
+                         ).andExpect(status().isOk())
+                         .andReturn().getResponse().getContentAsByteArray();
 
-    MvcResult mvcResult = this.mockMvc.perform(post("/api/maps/selected")
+    byte[] body2 = mockMvc.perform(MockMvcRequestBuilders
+                                      .get("/api/maps/towns/"+saved.getId())
+                                      .contentType(MediaType.APPLICATION_JSON)
+                         ).andExpect(status().isOk())
+                         .andReturn().getResponse().getContentAsByteArray();
+
+
+
+    List<CityDto> selectedCities = objectMapper.readerFor(CityDto.class).<CityDto>readValues(body2).readAll();
+
+
+    MvcResult mvcResult = this.mockMvc.perform(post("/api/maps/selection/"+saved.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(selectedCities)))
             .andExpect(status().isCreated())

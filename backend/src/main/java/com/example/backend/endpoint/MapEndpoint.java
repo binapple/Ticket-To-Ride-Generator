@@ -36,10 +36,10 @@ public class MapEndpoint {
     return mapService.create(createMapDto);
   }
 
-  @PostMapping
+  @PostMapping(value = "/selection/{id}")
   @CrossOrigin(origins = "http://localhost:4200")
   @ResponseStatus(HttpStatus.CREATED)
-  public List<MapPointDto> createMapPoints(@RequestBody List<CityDto> cityDtos) {
+  public List<MapPointDto> createMapPoints(@PathVariable Long id,@RequestBody List<CityDto> cityDtos) {
       return null;
   }
 
