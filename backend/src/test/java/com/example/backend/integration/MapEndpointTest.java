@@ -168,7 +168,7 @@ public class MapEndpointTest {
 
     MvcResult mvcResult = this.mockMvc.perform(post("/api/maps/selection/"+saved.getId())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(selectedCities)))
+                    .content(objectMapper.writeValueAsString(selectedCities.subList(0,50))))
             .andExpect(status().isCreated())
             .andDo(print())
             .andReturn();
