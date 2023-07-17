@@ -1,11 +1,10 @@
 package com.example.backend.service;
 
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
-import com.example.backend.entitiy.MapPoint;
+import com.example.backend.endpoint.dto.MapPointDto;
 
 public interface MapService {
 
@@ -46,9 +45,9 @@ public interface MapService {
   /**
    * Creates the MapPoints for further processing of a map with the chosen cities
    *
-   * @param id id of the corresponding Map
+   * @param id       id of the corresponding Map
    * @param cityDtos list of the chosen cities
    * @return the MapPoints used for visualizing the connections between cities
    */
-  List<MapPoint> createMapPoints(Long id, List<CityDto> cityDtos);
+  List<MapPointDto> createMapPoints(Long id, List<CityDto> cityDtos);
 }

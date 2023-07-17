@@ -1,28 +1,20 @@
 package com.example.backend.service.impl;
 
-import java.awt.Color;
 import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import javax.imageio.ImageIO;
 
 import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
+import com.example.backend.endpoint.dto.MapPointDto;
 import com.example.backend.endpoint.mapper.CityMapper;
 import com.example.backend.endpoint.mapper.MapMapper;
+import com.example.backend.endpoint.mapper.MapPointMapper;
 import com.example.backend.entitiy.City;
 import com.example.backend.entitiy.Map;
 import com.example.backend.entitiy.MapPoint;
@@ -31,12 +23,9 @@ import com.example.backend.repository.MapRepository;
 import com.example.backend.service.MapService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mxgraph.layout.mxCircleLayout;
-import com.mxgraph.layout.mxFastOrganicLayout;
-import com.mxgraph.layout.mxIGraphLayout;
-import com.mxgraph.util.mxCellRenderer;
 import org.jgrapht.Graph;
-import org.jgrapht.ext.JGraphXAdapter;
+import org.jgrapht.GraphTests;
+import org.jgrapht.Graphs;
 import org.jgrapht.generate.CompleteGraphGenerator;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
@@ -51,13 +40,15 @@ public class MapServiceImpl implements MapService {
   private final MapRepository mapRepository;
   private final CityMapper cityMapper;
   private final CityRepository cityRepository;
+  private final MapPointMapper mapPointMapper;
 
   @Autowired
-  public MapServiceImpl(MapMapper mapMapper, MapRepository mapRepository, CityMapper cityMapper, CityRepository cityRepository) {
+  public MapServiceImpl(MapMapper mapMapper, MapRepository mapRepository, CityMapper cityMapper, CityRepository cityRepository, MapPointMapper mapPointMapper) {
     this.mapMapper = mapMapper;
     this.mapRepository = mapRepository;
     this.cityMapper = cityMapper;
     this.cityRepository = cityRepository;
+    this.mapPointMapper = mapPointMapper;
   }
 
   @Override
@@ -189,7 +180,7 @@ public class MapServiceImpl implements MapService {
   }
 
   @Override
-  public List<MapPoint> createMapPoints(Long id, List<CityDto> cityDtos) {
+  public List<MapPointDto> createMapPoints(Long id, List<CityDto> cityDtos) {
 
     Map map =  mapRepository.getReferenceById(id);
 
@@ -225,7 +216,32 @@ public class MapServiceImpl implements MapService {
 
     reduceEdges(graph,map);
 
-    JGraphXAdapter<MapPoint, DefaultWeightedEdge> graphAdapter = new JGraphXAdapter<>(graph);
+      for (MapPoint p: graph.vertexSet()
+           ) {
+          List<MapPoint> neighbors = new ArrayList<>();
+          for (DefaultWeightedEdge e: graph.edgesOf(p)
+               ) {
+              MapPoint source = graph.getEdgeSource(e);
+              MapPoint target = graph.getEdgeTarget(e);
+              if(!source.equals(p))
+              {
+                  neighbors.add(source);
+              } else
+              {
+                  neighbors.add(target);
+              }
+          }
+          p.setNeighbors(neighbors);
+      }
+
+      Set<MapPoint> mapPoints = graph.vertexSet();
+      List<MapPoint> toReturn = new ArrayList<>();
+      for (MapPoint m : mapPoints
+           ) {
+          toReturn.add(m);
+      }
+
+ /*   JGraphXAdapter<MapPoint, DefaultWeightedEdge> graphAdapter = new JGraphXAdapter<>(graph);
 
     mxIGraphLayout layout = new mxFastOrganicLayout(graphAdapter);
     layout.execute(graphAdapter.getDefaultParent());
@@ -243,8 +259,8 @@ public class MapServiceImpl implements MapService {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-
-    return null;
+*/
+    return mapPointMapper.mapPointListToMapPointDtoListCustom(toReturn);
   }
 
   private void reduceEdges(Graph<MapPoint, DefaultWeightedEdge> graph, Map map)
@@ -252,14 +268,15 @@ public class MapServiceImpl implements MapService {
 
      Set<DefaultWeightedEdge> edges = graph.edgeSet();
 
-     List<DefaultWeightedEdge> edgeList = edges.stream().collect(Collectors.toList());
+     List<DefaultWeightedEdge> edgeList = new ArrayList<>(edges);
+
 
      Comparator<DefaultWeightedEdge> comp = new Comparator<DefaultWeightedEdge>() {
        @Override
        public int compare(DefaultWeightedEdge o1, DefaultWeightedEdge o2) {
          double first = graph.getEdgeWeight(o1);
          double second = graph.getEdgeWeight(o2);
-         return Double.compare(first,second);
+         return Double.compare(second,first);
        }
      };
 
@@ -275,30 +292,87 @@ public class MapServiceImpl implements MapService {
      float six = trainsize * 6;
      float five = trainsize * 5;
 
+     //remove connections with greater length than eight, and all except one of length eight
+     float tooBigSize = eight * 2;
+     while (tooBigSize >= eight) {
+
+         //This step is used to have a DefaultWeightEdge Object of the graph that can be deleted and is needed for binary search
+         Iterator<DefaultWeightedEdge> i = edgeList.iterator();
+         DefaultWeightedEdge e = new DefaultWeightedEdge();
+         while (i.hasNext())
+         {
+             DefaultWeightedEdge current = i.next();
+             if(graph.getEdgeWeight(current) >= tooBigSize)
+             {
+                 e = current;
+                 graph.setEdgeWeight(e,tooBigSize);
+                 break;
+             }
+         }
+
+         Graph<MapPoint, DefaultWeightedEdge> safetyCopy = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
+
+         Graphs.addGraph(safetyCopy, graph);
+
+         edgeList.sort(comp);
+         int index = Collections.binarySearch(edgeList,e,comp);
+         graph.removeEdge(e);
+         edgeList.remove(e);
+         if(tooBigSize == eight)
+         {
+             index = index-1;
+         }
+         List<DefaultWeightedEdge> toRemove = edgeList.subList(0, index);
+         graph.removeAllEdges(toRemove);
 
 
+         if(GraphTests.isConnected(graph))
+         {
+             edgeList = edgeList.subList(index,edgeList.size());
+             tooBigSize = tooBigSize - trainsize;
+         }
+         else {
+             Graphs.addGraph(graph,safetyCopy);
+             checkOneByOne(graph, toRemove, tooBigSize);
+             break;
+         }
 
 
-     Iterator<DefaultWeightedEdge> i = edgeList.iterator();
-     DefaultWeightedEdge e = new DefaultWeightedEdge();
-     while (i.hasNext())
-     {
-       DefaultWeightedEdge current = i.next();
-       if(graph.getEdgeWeight(current) > eight)
-       {
-         e = current;
-         graph.setEdgeWeight(e,eight+trainsize*0.1);
-         break;
-       }
      }
 
-    int index = Collections.binarySearch(edgeList,e,comp);
-     graph.removeEdge(e);
-     edgeList.remove(e);
-     List<DefaultWeightedEdge> toRemove = edgeList.subList(index, edgeList.size());
-     graph.removeAllEdges(toRemove);
+     edgeList = edges.stream().toList();
 
 
+
+
+
+
+
+  }
+
+    private void checkOneByOne(Graph<MapPoint, DefaultWeightedEdge> graph, List<DefaultWeightedEdge> toRemove, float tooBigSize) {
+
+        Graph<MapPoint, DefaultWeightedEdge> safetyCopy = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
+
+        Graphs.addGraph(safetyCopy, graph);
+
+        DefaultWeightedEdge problemEdge = new DefaultWeightedEdge();
+
+        for (DefaultWeightedEdge e: toRemove
+             ) {
+            graph.removeEdge(e);
+
+            if(!GraphTests.isConnected(graph))
+            {
+                problemEdge = e;
+                MapPoint v1 = safetyCopy.getEdgeSource(problemEdge);
+                MapPoint v2 = safetyCopy.getEdgeTarget(problemEdge);
+
+                v1.setConnectionIssue(true);
+                v2.setConnectionIssue(true);
+                graph.addEdge(v1, v2);
+            }
+        }
 
   }
 

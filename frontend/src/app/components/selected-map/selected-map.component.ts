@@ -5,13 +5,15 @@ import {
   circle,
   LatLng,
   latLng,
-  Map,
+  Map as map, polyline,
   tileLayer,
 } from "leaflet";
 import {MapService} from "../../services/map.service";
 import {MapDto} from '../../dtos/map';
 import {Point2D} from "../../dtos/point2d";
 import {City} from "../../dtos/city";
+import {MapPoint} from "../../dtos/map-point";
+
 
 
 @Component({
@@ -49,8 +51,11 @@ export class SelectedMapComponent {
   mapLoaded = false;
   cities: City[] = [];
   selectedCities: City[] = [];
+  mapPoints: MapPoint[] = [];
+  mappedMPs = new Map<number,MapPoint>();
   layers = [
     circle([ 46.95, -122 ], { radius: 0 }),
+    polyline([[0,0]]),
   ];
   searchCity: City = new City('',0,new Point2D(0,0));
   citiesLoaded = false;
@@ -86,13 +91,13 @@ export class SelectedMapComponent {
     };
   }
 
-  onMapReady(map: Map) {
-    const bounds = map.getBounds();
+  onMapReady(mapL: map) {
+    const bounds = mapL.getBounds();
     const northWest = bounds.getNorthWest();
     const northEast = bounds.getNorthEast();
     const southWest = bounds.getSouthWest();
     const southEast = bounds.getSouthEast();
-    const zoom = map.getZoom();
+    const zoom = mapL.getZoom();
 
     const northEastBoundary: Point2D = new Point2D(northEast.lng, northEast.lat);
     const northWestBoundary: Point2D = new Point2D(northWest.lng, northWest.lat);
@@ -131,6 +136,7 @@ export class SelectedMapComponent {
           this.selectedCities = this.cities.slice(0, 50);
           this.cities = this.cities.slice(50, this.cities.length + 1);
           this.addCitiesToMap(this.selectedCities);
+          this.loadMapPoints();
           this.citiesLoaded = true;
         }
       })
@@ -180,6 +186,7 @@ export class SelectedMapComponent {
 
     this.layers = [];
     this.addCitiesToMap(this.selectedCities);
+    this.loadMapPoints();
   }
 
 
@@ -192,6 +199,7 @@ export class SelectedMapComponent {
 
     this.layers = [];
     this.addCitiesToMap(this.selectedCities);
+    this.loadMapPoints();
   }
 
   loadTowns() {
@@ -203,8 +211,55 @@ export class SelectedMapComponent {
           this.cities = this.cities.slice(50, this.cities.length+1);
           this.layers = [];
           this.addCitiesToMap(this.selectedCities);
+          this.loadMapPoints();
         }
       })
+    }
+  }
+
+  loadMapPoints() {
+    if (this.savedMap.id != null && this.selectedCities.length > 0)
+    {
+      this.mapService.createMapPoints(this.savedMap.id, this.selectedCities).subscribe({
+          next: data => {
+            this.mapPoints = data;
+
+            this.mapPoints.forEach(mp =>
+            {
+              this.mappedMPs.set(mp.id,mp);
+            })
+
+            this.mapPoints.forEach(mp => {
+              const startPoint = mp.location;
+              let destPoint = new Point2D(0,0);
+              mp.neighbors.forEach( i => {
+                const destMp = this.mappedMPs.get(i);
+                if (!destMp?.isDrawn)
+                {
+
+                  if (destMp !== undefined) {
+                    destPoint = destMp.location;
+                  }
+
+                const latLngDestPoint = new LatLng(destPoint.y, destPoint.x);
+                const latLngstartPoint = new LatLng(startPoint.y, startPoint.x);
+                const LatLngs = [latLngDestPoint, latLngstartPoint];
+                let color = '#808080';
+                if (mp.connectionIssue && destMp?.connectionIssue) {
+                  color = '#ff0000';
+                }
+                this.layers.push(polyline(LatLngs, {color: color,interactive:false}));
+
+              }
+                }
+              )
+
+
+            })
+
+          }
+        }
+      )
     }
   }
 }
