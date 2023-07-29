@@ -1,6 +1,5 @@
 package com.example.backend.service.impl;
 
-import java.awt.geom.Area;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.io.IOException;
@@ -8,8 +7,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
@@ -90,7 +89,7 @@ public class MapServiceImpl implements MapService {
 
     String urlUnencoded = "[out:json]; node [\"place\"=\""+ place +"\"] (" + boundary + "); out body;";
 
-    String urlEncoded = URLEncoder.encode(urlUnencoded);
+    String urlEncoded = URLEncoder.encode(urlUnencoded, StandardCharsets.UTF_8);
 
     try {
       URL url = new URL("https://overpass-api.de/api/interpreter?data="+urlEncoded);
@@ -155,7 +154,7 @@ public class MapServiceImpl implements MapService {
 
               if(nameAvailable) {
                 List<City> alreadySavedCity = cityRepository.findCityByNameAndPopulation(newCity.getName(), newCity.getPopulation());
-                if (alreadySavedCity.size() == 0) {
+                if (alreadySavedCity.isEmpty()) {
                   map.addCity(newCity);
                   cityRepository.save(newCity);
 
@@ -237,11 +236,7 @@ public class MapServiceImpl implements MapService {
       }
 
       Set<MapPoint> mapPoints = graph.vertexSet();
-      List<MapPoint> toReturn = new ArrayList<>();
-      for (MapPoint m : mapPoints
-           ) {
-          toReturn.add(m);
-      }
+      List<MapPoint> toReturn = new ArrayList<>(mapPoints);
 
  /*   JGraphXAdapter<MapPoint, DefaultWeightedEdge> graphAdapter = new JGraphXAdapter<>(graph);
 
@@ -272,13 +267,10 @@ public class MapServiceImpl implements MapService {
       List<DefaultWeightedEdge> edgeList = new ArrayList<>(edges);
 
 
-      Comparator<DefaultWeightedEdge> comp = new Comparator<DefaultWeightedEdge>() {
-          @Override
-          public int compare(DefaultWeightedEdge o1, DefaultWeightedEdge o2) {
-              double first = graph.getEdgeWeight(o1);
-              double second = graph.getEdgeWeight(o2);
-              return Double.compare(second, first);
-          }
+      Comparator<DefaultWeightedEdge> comp = (o1, o2) -> {
+          double first = graph.getEdgeWeight(o1);
+          double second = graph.getEdgeWeight(o2);
+          return Double.compare(second, first);
       };
 
       edgeList.sort(comp);
@@ -289,7 +281,6 @@ public class MapServiceImpl implements MapService {
       float trainsize = (Math.abs(ne.x - sw.x)) * 26 / 1189;
 
       float eight = trainsize * 8;
-      float seven = trainsize * 7;
       float six = trainsize * 6;
       float five = trainsize * 5;
 
@@ -357,7 +348,7 @@ public class MapServiceImpl implements MapService {
               tooBigSize = tooBigSize - trainsize;
           } else {
               Graphs.addGraph(graph, safetyCopy);
-              checkOneByOne(graph, toRemove, tooBigSize);
+              checkOneByOne(graph, toRemove);
           }
 
 
@@ -382,21 +373,17 @@ public class MapServiceImpl implements MapService {
               if (edgeLine.intersectsLine(interLine)) {
 
 
-                  if(source.getLocation() == interSource.getLocation() || source.getLocation() == interTarget.getLocation())
-                  {
-
-                  } else if (target.getLocation() == interSource.getLocation() || target.getLocation() == interTarget.getLocation())
-                  {
-
-                  } else {
-                          double weightEdge = graph.getEdgeWeight(e);
-                          double weightInter = graph.getEdgeWeight(intersect);
-                          if (weightEdge > weightInter) {
-                              graph.removeEdge(e);
-                              break;
-                          } else {
-                              graph.removeEdge(intersect);
-                          }
+                  if (source.getLocation() != interSource.getLocation() && source.getLocation() != interTarget.getLocation()) {
+                      if (target.getLocation() != interSource.getLocation() && target.getLocation() != interTarget.getLocation()) {
+                              double weightEdge = graph.getEdgeWeight(e);
+                              double weightInter = graph.getEdgeWeight(intersect);
+                              if (weightEdge > weightInter) {
+                                  graph.removeEdge(e);
+                                  break;
+                              } else {
+                                  graph.removeEdge(intersect);
+                              }
+                      }
                   }
               }
           }
@@ -406,13 +393,13 @@ public class MapServiceImpl implements MapService {
 
   }
 
-    private void checkOneByOne(Graph<MapPoint, DefaultWeightedEdge> graph, List<DefaultWeightedEdge> toRemove, float tooBigSize) {
+    private void checkOneByOne(Graph<MapPoint, DefaultWeightedEdge> graph, List<DefaultWeightedEdge> toRemove) {
 
         Graph<MapPoint, DefaultWeightedEdge> safetyCopy = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
 
         Graphs.addGraph(safetyCopy, graph);
 
-        DefaultWeightedEdge problemEdge = new DefaultWeightedEdge();
+        DefaultWeightedEdge problemEdge;
 
         for (DefaultWeightedEdge e: toRemove
              ) {
