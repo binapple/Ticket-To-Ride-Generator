@@ -135,7 +135,7 @@ export class SelectedMapComponent {
           this.cities = data;
           this.selectedCities = this.cities.slice(0, 50);
           this.cities = this.cities.slice(50, this.cities.length + 1);
-          this.addCitiesToMap(this.selectedCities);
+          this.addCitiesToMap();
           this.loadMapPoints();
           this.citiesLoaded = true;
         }
@@ -143,9 +143,9 @@ export class SelectedMapComponent {
     }
   }
 
-  private addCitiesToMap(array: City[])
+  private addCitiesToMap()
   {
-    array.forEach(city =>
+    this.selectedCities.forEach(city =>
     {
       const location = city.location;
       const latLng = new LatLng(location.y, location.x);
@@ -158,6 +158,20 @@ export class SelectedMapComponent {
 
       ).bindTooltip(city.name,{permanent: true, direction: "auto"}));
     });
+
+    this.cities.forEach(city =>
+      {
+        const location = city.location;
+        const latLng = new LatLng(location.y, location.x);
+
+        this.layers.push(circle(latLng,0, {color:'#d94e4e'}).on("dblclick",
+
+          e => {
+            this.zone.run(() => this.circleClick(e.target));
+          }
+
+        ).bindTooltip(city.name,{permanent: false, direction: "auto"}));
+      });
   }
 
   circleClick(circle: Circle)
@@ -165,16 +179,18 @@ export class SelectedMapComponent {
       const circleCityName = circle.getTooltip()?.getContent();
       if(circleCityName != undefined)
       {
-        const toBeRemoved = this.selectedCities.find(c => c.name === circleCityName.toString())
+        let toBeChanged = this.selectedCities.find(c => c.name === circleCityName.toString());
 
-        if (toBeRemoved != undefined) {
-          this.removeCity(toBeRemoved);
+        if (toBeChanged != undefined) {
+          this.removeCity(toBeChanged);
+        } else {
+          toBeChanged = this.cities.find(c => c.name === circleCityName.toString());
+
+          if (toBeChanged != undefined) {
+            this.addCity(toBeChanged);
+          }
         }
       }
-    const index = this.layers.indexOf(circle);
-    if(index > -1) {
-      this.layers.splice(index,1);
-    }
   }
 
   removeCity(city: City) {
@@ -185,7 +201,7 @@ export class SelectedMapComponent {
     this.cities.push(city);
 
     this.layers = [];
-    this.addCitiesToMap(this.selectedCities);
+    this.addCitiesToMap();
     this.loadMapPoints();
   }
 
@@ -198,7 +214,7 @@ export class SelectedMapComponent {
     this.selectedCities.push(city);
 
     this.layers = [];
-    this.addCitiesToMap(this.selectedCities);
+    this.addCitiesToMap();
     this.loadMapPoints();
   }
 
@@ -210,7 +226,7 @@ export class SelectedMapComponent {
           this.selectedCities = this.cities.slice(0,50);
           this.cities = this.cities.slice(50, this.cities.length+1);
           this.layers = [];
-          this.addCitiesToMap(this.selectedCities);
+          this.addCitiesToMap();
           this.loadMapPoints();
         }
       })

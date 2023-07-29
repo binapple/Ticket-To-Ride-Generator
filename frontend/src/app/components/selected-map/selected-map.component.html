@@ -1,4 +1,6 @@
-<p>Your selected Map (Double click on Cities to remove them)</p>
+<p *ngIf="citiesLoaded">Your selected Map (Double click on Cities to remove or add them to the grid)</p>
+<p *ngIf="mapLoaded && !citiesLoaded">Your selected Map (Load Cities or change your selected Map by going back)</p>
+
 <div class="col-sm-12 col-md-6 col-lg-8">
 
   <div leaflet
@@ -23,7 +25,7 @@
   <table>
     <thead>
     <tr>
-      <th>Added Cities</th>
+      <th>Added Cities: {{selectedCities.length}} (Recommended: ~50)</th>
     </tr>
     </thead>
     <tbody>
@@ -44,10 +46,10 @@
   </div>
 
   <div class="col-md-6">
-  <table>
+  <table style="height: 300px; display: inline-block; overflow: auto; margin-top: 20px">
     <thead>
     <tr>
-      <th>Choose Cities to Add</th>
+      <th style="position: absolute; margin-top: -20px">Choose Cities to Add</th>
     </tr>
     </thead>
     <tbody>

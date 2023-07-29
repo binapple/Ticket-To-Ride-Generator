@@ -1,5 +1,7 @@
 package com.example.backend.service.impl;
 
+import java.awt.geom.Area;
+import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -263,89 +265,143 @@ public class MapServiceImpl implements MapService {
     return mapPointMapper.mapPointListToMapPointDtoListCustom(toReturn);
   }
 
-  private void reduceEdges(Graph<MapPoint, DefaultWeightedEdge> graph, Map map)
-  {
+  private void reduceEdges(Graph<MapPoint, DefaultWeightedEdge> graph, Map map) {
 
-     Set<DefaultWeightedEdge> edges = graph.edgeSet();
+      Set<DefaultWeightedEdge> edges = graph.edgeSet();
 
-     List<DefaultWeightedEdge> edgeList = new ArrayList<>(edges);
-
-
-     Comparator<DefaultWeightedEdge> comp = new Comparator<DefaultWeightedEdge>() {
-       @Override
-       public int compare(DefaultWeightedEdge o1, DefaultWeightedEdge o2) {
-         double first = graph.getEdgeWeight(o1);
-         double second = graph.getEdgeWeight(o2);
-         return Double.compare(second,first);
-       }
-     };
-
-     edgeList.sort(comp);
-
-     Point2D.Float sw = map.getSouthWestBoundary();
-     Point2D.Float ne = map.getNorthEastBoundary();
-
-     float trainsize = (Math.abs(ne.x - sw.x))*26/1189;
-
-     float eight = trainsize * 8;
-     float seven = trainsize * 7;
-     float six = trainsize * 6;
-     float five = trainsize * 5;
-
-     //remove connections with greater length than eight, and all except one of length eight
-     float tooBigSize = eight * 2;
-     while (tooBigSize >= eight) {
-
-         //This step is used to have a DefaultWeightEdge Object of the graph that can be deleted and is needed for binary search
-         Iterator<DefaultWeightedEdge> i = edgeList.iterator();
-         DefaultWeightedEdge e = new DefaultWeightedEdge();
-         while (i.hasNext())
-         {
-             DefaultWeightedEdge current = i.next();
-             if(graph.getEdgeWeight(current) >= tooBigSize)
-             {
-                 e = current;
-                 graph.setEdgeWeight(e,tooBigSize);
-                 break;
-             }
-         }
-
-         Graph<MapPoint, DefaultWeightedEdge> safetyCopy = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
-
-         Graphs.addGraph(safetyCopy, graph);
-
-         edgeList.sort(comp);
-         int index = Collections.binarySearch(edgeList,e,comp);
-         graph.removeEdge(e);
-         edgeList.remove(e);
-         if(tooBigSize == eight)
-         {
-             index = index-1;
-         }
-         List<DefaultWeightedEdge> toRemove = edgeList.subList(0, index);
-         graph.removeAllEdges(toRemove);
+      List<DefaultWeightedEdge> edgeList = new ArrayList<>(edges);
 
 
-         if(GraphTests.isConnected(graph))
-         {
-             edgeList = edgeList.subList(index,edgeList.size());
-             tooBigSize = tooBigSize - trainsize;
-         }
-         else {
-             Graphs.addGraph(graph,safetyCopy);
-             checkOneByOne(graph, toRemove, tooBigSize);
-             break;
-         }
+      Comparator<DefaultWeightedEdge> comp = new Comparator<DefaultWeightedEdge>() {
+          @Override
+          public int compare(DefaultWeightedEdge o1, DefaultWeightedEdge o2) {
+              double first = graph.getEdgeWeight(o1);
+              double second = graph.getEdgeWeight(o2);
+              return Double.compare(second, first);
+          }
+      };
+
+      edgeList.sort(comp);
+
+      Point2D.Float sw = map.getSouthWestBoundary();
+      Point2D.Float ne = map.getNorthEastBoundary();
+
+      float trainsize = (Math.abs(ne.x - sw.x)) * 26 / 1189;
+
+      float eight = trainsize * 8;
+      float seven = trainsize * 7;
+      float six = trainsize * 6;
+      float five = trainsize * 5;
+
+      //remove connections with greater equal length then eight and leave 1 of eight
+      //then remove all of 7 and all of 6 except 2
+      //then remove all of 5
+      float tooBigSize = eight * 2;
+      while (tooBigSize >= five) {
+
+          //This step is used to have a DefaultWeightEdge Object of the graph that can be deleted and is needed for binary search
+          Iterator<DefaultWeightedEdge> i = edgeList.iterator();
+          DefaultWeightedEdge e = new DefaultWeightedEdge();
+          //used to keep enough of the long edges
+          int skipCounter = 0;
+          while (i.hasNext()) {
+              DefaultWeightedEdge current = i.next();
+              if (graph.getEdgeWeight(current) >= tooBigSize) {
+
+                  if (tooBigSize <= eight && tooBigSize > six) {
+                      if (skipCounter >= 1) {
+                          e = current;
+                          graph.setEdgeWeight(e, tooBigSize);
+                          break;
+                      }
+                  } else if (tooBigSize <= six) {
+                      if (skipCounter >= 3) {
+                          e = current;
+                          graph.setEdgeWeight(e, tooBigSize);
+                          break;
+                      }
+                  } else {
+                      e = current;
+                      graph.setEdgeWeight(e, tooBigSize);
+                      break;
+                  }
+
+                  skipCounter++;
+              }
+          }
+
+          Graph<MapPoint, DefaultWeightedEdge> safetyCopy = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
+
+          Graphs.addGraph(safetyCopy, graph);
+
+          edgeList.sort(comp);
+          int index = Collections.binarySearch(edgeList, e, comp);
+          graph.removeEdge(e);
+          edgeList.remove(e);
+
+          if (tooBigSize <= eight && tooBigSize > six) {
+              index = index - 1;
+          }
+          if (tooBigSize <= six) {
+              index = index - 3;
+          }
+          if (index < 0) {
+              index = 0;
+          }
+
+          List<DefaultWeightedEdge> toRemove = edgeList.subList(0, index);
+          graph.removeAllEdges(toRemove);
+
+          if (GraphTests.isConnected(graph)) {
+              edgeList = edgeList.subList(index, edgeList.size());
+              tooBigSize = tooBigSize - trainsize;
+          } else {
+              Graphs.addGraph(graph, safetyCopy);
+              checkOneByOne(graph, toRemove, tooBigSize);
+          }
 
 
-     }
-
-     edgeList = edges.stream().toList();
+      }
 
 
+      edgeList = edges.stream().toList();
+
+      //Check if connections are intersecting each other
+      for (DefaultWeightedEdge e : edgeList
+      ) {
+          MapPoint source = graph.getEdgeSource(e);
+          MapPoint target = graph.getEdgeTarget(e);
+          Line2D edgeLine = new Line2D.Float(source.getLocation(), target.getLocation());
+
+          for (DefaultWeightedEdge intersect : edgeList
+          ) {
+              MapPoint interSource = graph.getEdgeSource(intersect);
+              MapPoint interTarget = graph.getEdgeTarget(intersect);
+              Line2D interLine = new Line2D.Float(interSource.getLocation(), interTarget.getLocation());
+
+              if (edgeLine.intersectsLine(interLine)) {
 
 
+                  if(source.getLocation() == interSource.getLocation() || source.getLocation() == interTarget.getLocation())
+                  {
 
+                  } else if (target.getLocation() == interSource.getLocation() || target.getLocation() == interTarget.getLocation())
+                  {
+
+                  } else {
+                          double weightEdge = graph.getEdgeWeight(e);
+                          double weightInter = graph.getEdgeWeight(intersect);
+                          if (weightEdge > weightInter) {
+                              graph.removeEdge(e);
+                              break;
+                          } else {
+                              graph.removeEdge(intersect);
+                          }
+                  }
+              }
+          }
+
+      }
 
 
   }
