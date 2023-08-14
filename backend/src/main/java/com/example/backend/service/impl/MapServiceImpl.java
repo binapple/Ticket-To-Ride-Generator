@@ -20,6 +20,7 @@ import com.example.backend.entitiy.City;
 import com.example.backend.entitiy.Map;
 import com.example.backend.entitiy.MapPoint;
 import com.example.backend.repository.CityRepository;
+import com.example.backend.repository.MapPointRepository;
 import com.example.backend.repository.MapRepository;
 import com.example.backend.service.MapService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -42,14 +43,16 @@ public class MapServiceImpl implements MapService {
   private final CityMapper cityMapper;
   private final CityRepository cityRepository;
   private final MapPointMapper mapPointMapper;
+  private final MapPointRepository mapPointRepository;
 
   @Autowired
-  public MapServiceImpl(MapMapper mapMapper, MapRepository mapRepository, CityMapper cityMapper, CityRepository cityRepository, MapPointMapper mapPointMapper) {
+  public MapServiceImpl(MapMapper mapMapper, MapRepository mapRepository, CityMapper cityMapper, CityRepository cityRepository, MapPointMapper mapPointMapper, MapPointRepository mapPointRepository) {
     this.mapMapper = mapMapper;
     this.mapRepository = mapRepository;
     this.cityMapper = cityMapper;
     this.cityRepository = cityRepository;
     this.mapPointMapper = mapPointMapper;
+    this.mapPointRepository = mapPointRepository;
   }
 
   @Override
@@ -62,7 +65,13 @@ public class MapServiceImpl implements MapService {
     return mapMapper.mapToCreateMapDto(map);
   }
 
-  @Override
+    @Override
+    public CreateMapDto get(Long id) {
+        Map map = mapRepository.getReferenceById(id);
+        return mapMapper.mapToCreateMapDto(map);
+    }
+
+    @Override
   public List<CityDto> getInitialCities(Long id) {
 
     return getCityDtos(id, "city");
@@ -181,7 +190,7 @@ public class MapServiceImpl implements MapService {
   }
 
   @Override
-  public List<MapPointDto> createMapPoints(Long id, List<CityDto> cityDtos) {
+  public List<MapPointDto> createMapPoints(Long id, List<CityDto> cityDtos, boolean save) {
 
     Map map =  mapRepository.getReferenceById(id);
 
@@ -195,8 +204,14 @@ public class MapServiceImpl implements MapService {
       newPoint.setLocation(c.getLocation());
       newPoint.setName(c.getName());
       newPoint.setId(c.getId());
+      if(save)
+      {
+          newPoint = this.mapPointRepository.save(newPoint);
+      }
       graph.addVertex(newPoint);
     }
+
+
 
     CompleteGraphGenerator<MapPoint, DefaultWeightedEdge> completeGraphGenerator
         = new CompleteGraphGenerator<>();
@@ -217,6 +232,8 @@ public class MapServiceImpl implements MapService {
 
     reduceEdges(graph,map);
 
+
+
       for (MapPoint p: graph.vertexSet()
            ) {
           List<MapPoint> neighbors = new ArrayList<>();
@@ -235,28 +252,15 @@ public class MapServiceImpl implements MapService {
           p.setNeighbors(neighbors);
       }
 
-      Set<MapPoint> mapPoints = graph.vertexSet();
-      List<MapPoint> toReturn = new ArrayList<>(mapPoints);
+      Set<MapPoint> mapPointsWithNeighbors = graph.vertexSet();
 
- /*   JGraphXAdapter<MapPoint, DefaultWeightedEdge> graphAdapter = new JGraphXAdapter<>(graph);
+      if(save)
+      {
+          this.mapPointRepository.saveAll(mapPointsWithNeighbors);
+      }
 
-    mxIGraphLayout layout = new mxFastOrganicLayout(graphAdapter);
-    layout.execute(graphAdapter.getDefaultParent());
+      List<MapPoint> toReturn = new ArrayList<>(mapPointsWithNeighbors);
 
-    BufferedImage image =
-        mxCellRenderer.createBufferedImage(graphAdapter, null, 2, Color.WHITE, true, null);
-    File img = new File("src/test/resources/graph.png");
-    try {
-      img.createNewFile();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    try {
-      ImageIO.write(image,"PNG", img);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-*/
     return mapPointMapper.mapPointListToMapPointDtoListCustom(toReturn);
   }
 
@@ -393,7 +397,7 @@ public class MapServiceImpl implements MapService {
 
   }
 
-    private void checkOneByOne(Graph<MapPoint, DefaultWeightedEdge> graph, List<DefaultWeightedEdge> toRemove) {
+  private void checkOneByOne(Graph<MapPoint, DefaultWeightedEdge> graph, List<DefaultWeightedEdge> toRemove) {
 
         Graph<MapPoint, DefaultWeightedEdge> safetyCopy = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
 
@@ -419,4 +423,88 @@ public class MapServiceImpl implements MapService {
 
   }
 
+    @Override
+    public List<MapPointDto> colorizeMapPoints(Long id, List<CityDto> cityDtos) {
+        List<MapPointDto> mapPointDtoList = this.createMapPoints(id, cityDtos, true);
+
+        Graph<MapPoint, DefaultWeightedEdge> graph = this.generateGraphFromMapPointDtos(mapPointDtoList);
+
+        Set<DefaultWeightedEdge> edgeSet = graph.edgeSet();
+
+        Map map = this.mapRepository.getReferenceById(id);
+
+        //used for colorization of longer connections
+        Point2D.Float sw = map.getSouthWestBoundary();
+        Point2D.Float ne = map.getNorthEastBoundary();
+
+        float trainsize = (Math.abs(ne.x - sw.x)) * 26 / 1189;
+
+        float eight = trainsize * 8;
+        float six = trainsize * 6;
+
+        //find out how many edges the graph has
+       int connectionCount = graph.edgeSet().size();
+
+        // 1/3 of connections are colorless
+        int colorless = connectionCount / 3;
+
+        // 1/3 of colorless are Tunnel/Joker-Fields
+        int jokerCount = colorless / 3;
+        int tunnelCount = jokerCount;
+
+        // each color should have equal amount of connections
+        int colorMax = (connectionCount - colorless) / 8;
+
+
+
+        Set<MapPoint> mapPointSet = graph.vertexSet();
+
+        ArrayList<MapPoint> mapPointArrayList = new ArrayList<>(mapPointSet);
+
+        return this.mapPointMapper.mapPointListToMapPointDtoListCustom(mapPointArrayList);
+
+
+
+    }
+
+    private Graph<MapPoint, DefaultWeightedEdge> generateGraphFromMapPointDtos(List<MapPointDto> mapPointDtoList) {
+      Graph<MapPoint,DefaultWeightedEdge> graph = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
+
+      mapPointDtoList.sort(Comparator.comparing(MapPointDto::getId));
+
+      //Add MapPoints to graph
+        for (MapPointDto mPD: mapPointDtoList
+             ) {
+            MapPoint toAdd = new MapPoint();
+            toAdd = this.mapPointRepository.getReferenceById(mPD.getId());
+            graph.addVertex(toAdd);
+        }
+
+        //Add edges to graph
+        Set<MapPoint> mapPoints = graph.vertexSet();
+        List<MapPoint> finishedMapPoint = new ArrayList<>();
+
+        for (MapPoint mP: mapPoints
+             ) {
+
+            for (MapPoint neighbor : mP.getNeighbors()
+            ) {
+                if (!finishedMapPoint.contains(neighbor)) {
+                    graph.addEdge(mP, neighbor);
+                }
+            }
+            finishedMapPoint.add(mP);
+        }
+
+        //Set Weights for graph
+        for (DefaultWeightedEdge e: graph.edgeSet()
+             ) {
+            MapPoint source = graph.getEdgeSource(e);
+            MapPoint target = graph.getEdgeTarget(e);
+            double weight = source.getLocation().distance(target.getLocation());
+            graph.setEdgeWeight(e,weight);
+        }
+
+      return graph;
+    }
 }

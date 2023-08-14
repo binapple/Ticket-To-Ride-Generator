@@ -1,5 +1,6 @@
 package com.example.backend.endpoint.dto;
 
+import com.example.backend.type.Colorization;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import java.awt.geom.Point2D;
@@ -13,6 +14,8 @@ public class MapPointDto {
     private String name;
 
     private Point2D.Float location;
+
+    private Colorization color;
 
     private List<Long> neighbors;
 
@@ -56,5 +59,13 @@ public class MapPointDto {
 
     public void setConnectionIssue(boolean connectionIssue) {
         this.connectionIssue = connectionIssue;
+    }
+
+    public Colorization getColor() {
+        return color;
+    }
+
+    public void setColor(Colorization color) {
+        this.color = color;
     }
 }

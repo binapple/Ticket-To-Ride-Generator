@@ -54,30 +54,66 @@ public class MapEndpointTest {
     createMapDto.setZoom(4);
 
     MvcResult mvcResult = this.mockMvc.perform(post("/api/maps")
-             .contentType(MediaType.APPLICATION_JSON)
-             .content(objectMapper.writeValueAsString(createMapDto)))
-        .andExpect(status().isCreated())
-        .andDo(print())
-        .andReturn();
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(createMapDto)))
+            .andExpect(status().isCreated())
+            .andDo(print())
+            .andReturn();
 
     MockHttpServletResponse response = mvcResult.getResponse();
 
     assertAll(
-        () -> assertEquals(HttpStatus.CREATED.value(), response.getStatus()),
-        () -> assertEquals(MediaType.APPLICATION_JSON_VALUE, response.getContentType())
+            () -> assertEquals(HttpStatus.CREATED.value(), response.getStatus()),
+            () -> assertEquals(MediaType.APPLICATION_JSON_VALUE, response.getContentType())
     );
 
     CreateMapDto createMapDtoResponse = objectMapper.readValue(response.getContentAsString(), CreateMapDto.class);
 
     assertAll(
-        () -> assertEquals(createMapDto.getNorthEastBoundary(), createMapDtoResponse.getNorthEastBoundary()),
-        () -> assertEquals(createMapDto.getSouthWestBoundary(), createMapDtoResponse.getSouthWestBoundary()),
-        () -> assertEquals(createMapDto.getNorthWestBoundary(), createMapDtoResponse.getNorthWestBoundary()),
-        () -> assertEquals(createMapDto.getSouthEastBoundary(), createMapDtoResponse.getSouthEastBoundary()),
-        () -> assertEquals(createMapDto.getZoom(), createMapDtoResponse.getZoom())
+            () -> assertEquals(createMapDto.getNorthEastBoundary(), createMapDtoResponse.getNorthEastBoundary()),
+            () -> assertEquals(createMapDto.getSouthWestBoundary(), createMapDtoResponse.getSouthWestBoundary()),
+            () -> assertEquals(createMapDto.getNorthWestBoundary(), createMapDtoResponse.getNorthWestBoundary()),
+            () -> assertEquals(createMapDto.getSouthEastBoundary(), createMapDtoResponse.getSouthEastBoundary()),
+            () -> assertEquals(createMapDto.getZoom(), createMapDtoResponse.getZoom())
     );
 
-}
+  }
+
+  @Test
+  public void givenMap_whenGettingMap_returnsMapFromBackend() throws Exception {
+    CreateMapDto createMapDto = new CreateMapDto();
+
+    createMapDto.setNorthWestBoundary(new Point2D.Float(13.07f, 48.29f));
+    createMapDto.setNorthEastBoundary(new Point2D.Float(17.35f, 48.29f));
+    createMapDto.setSouthWestBoundary(new Point2D.Float(13.07f, 46.21f));
+    createMapDto.setSouthEastBoundary(new Point2D.Float(17.35f, 46.21f));
+
+    Point2D.Float center = new Point2D.Float((13.07f+17.35f)/2, (48.29f+46.21f)/2);
+    createMapDto.setCenter(center);
+    createMapDto.setZoom(4);
+
+    CreateMapDto saved = mapService.create(createMapDto);
+
+    byte[] body = mockMvc.perform(MockMvcRequestBuilders
+                    .get("/api/maps/" + saved.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+            ).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsByteArray();
+
+    List<CreateMapDto> returned = objectMapper.readerFor(CreateMapDto.class).<CreateMapDto>readValues(body).readAll();
+    CreateMapDto found = returned.get(0);
+
+    assertAll(
+            () -> assertEquals(found.getCenter(), saved.getCenter()),
+            () -> assertEquals(found.getId(), saved.getId()),
+            () -> assertEquals(found.getZoom(), saved.getZoom()),
+            () -> assertEquals(found.getSouthEastBoundary(), saved.getSouthEastBoundary()),
+            () -> assertEquals(found.getNorthEastBoundary(), saved.getNorthEastBoundary()),
+            () -> assertEquals(found.getSouthWestBoundary(), saved.getSouthWestBoundary()),
+            () -> assertEquals(found.getNorthWestBoundary(), saved.getNorthWestBoundary())
+    );
+
+  }
 
   @Test
   public void givenMap_whenGetCitiesIsCalled_thenCitiesAreReturnedAsList() throws Exception {
@@ -92,23 +128,22 @@ public class MapEndpointTest {
     CreateMapDto saved = mapService.create(createMapDto);
 
     byte[] body = mockMvc.perform(MockMvcRequestBuilders
-                                      .get("/api/maps/cities/"+saved.getId())
-                                      .contentType(MediaType.APPLICATION_JSON)
-                         ).andExpect(status().isOk())
-                         .andReturn().getResponse().getContentAsByteArray();
-
+                    .get("/api/maps/cities/" + saved.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+            ).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsByteArray();
 
 
     List<CityDto> cityDtos = objectMapper.readerFor(CityDto.class).<CityDto>readValues(body).readAll();
 
     assertAll(
-        () -> assertNotEquals(cityDtos, null)
+            () -> assertNotEquals(cityDtos, null)
     );
 
   }
 
   @Test
-  public void givenMap_whenCitiesLoadedAndGetTownsIsCalled_thenTownsAreCalled() throws Exception{
+  public void givenMap_whenCitiesLoadedAndGetTownsIsCalled_thenTownsAreCalled() throws Exception {
 
     CreateMapDto createMapDto = new CreateMapDto();
 
@@ -121,24 +156,23 @@ public class MapEndpointTest {
     CreateMapDto saved = mapService.create(createMapDto);
 
     byte[] body = mockMvc.perform(MockMvcRequestBuilders
-                                      .get("/api/maps/towns/"+saved.getId())
-                                      .contentType(MediaType.APPLICATION_JSON)
-                         ).andExpect(status().isOk())
-                         .andReturn().getResponse().getContentAsByteArray();
-
+                    .get("/api/maps/towns/" + saved.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+            ).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsByteArray();
 
 
     List<CityDto> cityDtos = objectMapper.readerFor(CityDto.class).<CityDto>readValues(body).readAll();
 
     assertAll(
-        () -> assertNotEquals(cityDtos, null)
+            () -> assertNotEquals(cityDtos, null)
     );
 
   }
 
 
   @Test
-  public void givenMapWithSelectedCities_whenSavingCities_thenCoordinatesSavedAsMapPoints() throws Exception {
+  public void givenMap_whenSelectingCities_thenCoordinatesSavedAsMapPoints() throws Exception {
     CreateMapDto createMapDto = new CreateMapDto();
 
     createMapDto.setNorthWestBoundary(new Point2D.Float(13.07f, 48.29f));
@@ -150,31 +184,64 @@ public class MapEndpointTest {
     CreateMapDto saved = mapService.create(createMapDto);
 
     byte[] body = mockMvc.perform(MockMvcRequestBuilders
-                                      .get("/api/maps/cities/"+saved.getId())
-                                      .contentType(MediaType.APPLICATION_JSON)
-                         ).andExpect(status().isOk())
-                         .andReturn().getResponse().getContentAsByteArray();
+                    .get("/api/maps/cities/" + saved.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+            ).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsByteArray();
 
     byte[] body2 = mockMvc.perform(MockMvcRequestBuilders
-                                      .get("/api/maps/towns/"+saved.getId())
-                                      .contentType(MediaType.APPLICATION_JSON)
-                         ).andExpect(status().isOk())
-                         .andReturn().getResponse().getContentAsByteArray();
-
+                    .get("/api/maps/towns/" + saved.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+            ).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsByteArray();
 
 
     List<CityDto> selectedCities = objectMapper.readerFor(CityDto.class).<CityDto>readValues(body2).readAll();
 
 
-    MvcResult mvcResult = this.mockMvc.perform(post("/api/maps/selection/"+saved.getId())
+    MvcResult mvcResult = this.mockMvc.perform(post("/api/maps/selection/" + saved.getId())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(selectedCities.subList(0,50))))
+                    .content(objectMapper.writeValueAsString(selectedCities.subList(0, 50))))
             .andExpect(status().isOk())
             .andDo(print())
             .andReturn();
 
 
-
   }
 
+  @Test
+  public void givenMapWithFinalizedCitySelection_whenSavingSelection_thenColorizeMapPoints() throws Exception {
+    CreateMapDto createMapDto = new CreateMapDto();
+
+    createMapDto.setNorthWestBoundary(new Point2D.Float(13.07f, 48.29f));
+    createMapDto.setNorthEastBoundary(new Point2D.Float(17.35f, 48.29f));
+    createMapDto.setSouthWestBoundary(new Point2D.Float(13.07f, 46.21f));
+    createMapDto.setSouthEastBoundary(new Point2D.Float(17.35f, 46.21f));
+    createMapDto.setZoom(4);
+
+    CreateMapDto saved = mapService.create(createMapDto);
+
+    byte[] body = mockMvc.perform(MockMvcRequestBuilders
+                    .get("/api/maps/cities/" + saved.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+            ).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsByteArray();
+
+    byte[] body2 = mockMvc.perform(MockMvcRequestBuilders
+                    .get("/api/maps/towns/" + saved.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+            ).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsByteArray();
+
+
+    List<CityDto> selectedCities = objectMapper.readerFor(CityDto.class).<CityDto>readValues(body2).readAll();
+
+    MvcResult mvcResult = this.mockMvc.perform(post("/api/maps/colorization/" + saved.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(selectedCities.subList(0, 50))))
+            .andExpect(status().isOk())
+            .andDo(print())
+            .andReturn();
+
+  }
 }

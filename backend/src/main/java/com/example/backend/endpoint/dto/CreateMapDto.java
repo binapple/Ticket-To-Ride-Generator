@@ -14,6 +14,8 @@ public class CreateMapDto {
 
   private Point2D.Float southEastBoundary;
 
+  private Point2D.Float center;
+
   private int zoom;
 
   public Point2D.Float getNorthWestBoundary() {
@@ -64,15 +66,24 @@ public class CreateMapDto {
     this.zoom = zoom;
   }
 
+  public Point2D.Float getCenter() {
+    return center;
+  }
+
+  public void setCenter(Point2D.Float center) {
+    this.center = center;
+  }
+
   @Override
   public String toString() {
     return "CreateMapDto{" +
-        "id=" + id +
-        ", northWestBoundary=" + northWestBoundary +
-        ", southWestBoundary=" + southWestBoundary +
-        ", northEastBoundary=" + northEastBoundary +
-        ", southEastBoundary=" + southEastBoundary +
-        ", zoom=" + zoom +
-        '}';
+            "id=" + id +
+            ", northWestBoundary=" + northWestBoundary +
+            ", southWestBoundary=" + southWestBoundary +
+            ", northEastBoundary=" + northEastBoundary +
+            ", southEastBoundary=" + southEastBoundary +
+            ", center=" + center +
+            ", zoom=" + zoom +
+            '}';
   }
 }

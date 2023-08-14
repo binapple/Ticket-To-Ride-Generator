@@ -45,9 +45,28 @@ public interface MapService {
   /**
    * Creates the MapPoints for further processing of a map with the chosen cities
    *
-   * @param id       id of the corresponding Map
+   * @param id id of the corresponding Map
    * @param cityDtos list of the chosen cities
+   * @param save if the MapPoints should be saved, or they are just for viewing purposes (when still selecting cities)
    * @return the MapPoints used for visualizing the connections between cities
    */
-  List<MapPointDto> createMapPoints(Long id, List<CityDto> cityDtos);
+  List<MapPointDto> createMapPoints(Long id, List<CityDto> cityDtos, boolean save);
+
+  /**
+   * Colorizes the MapPoints of a map with the chosen cities and saves them to the map
+   *
+   * @param id id of the corresponding Map
+   * @param cityDtos list of the chosen cities
+   * @return the MapPoints used for visualizing the colored connections between cities
+   */
+  List<MapPointDto> colorizeMapPoints(Long id, List<CityDto> cityDtos);
+
+
+  /**
+   * Gets the Map from local storage
+   *
+   * @param id of the Map
+   * @return a CreateMapDto
+   */
+    CreateMapDto get(Long id);
 }

@@ -1,7 +1,10 @@
 import {Component} from '@angular/core';
 import {latLng, LatLng, tileLayer,} from 'leaflet';
+import * as L from 'leaflet';
 import {NavigationExtras, Router} from "@angular/router";
 import {MapService} from "../../services/map.service";
+import {Point2D} from "../../dtos/point2d";
+import {MapDto} from "../../dtos/map";
 
 
 @Component({
@@ -33,6 +36,11 @@ export class MapComponent {
   lat = this.center.lat;
   lng = this.center.lng;
 
+  leafletMap!: L.Map;
+  emptyPoint: Point2D = new Point2D(0,0);
+  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0);
+
+
   constructor(private router : Router,
               private mapService: MapService) {
   }
@@ -61,15 +69,41 @@ export class MapComponent {
   selectedMap() {
     this.doApply();
 
-    const navigationExtras: NavigationExtras = {
-      queryParams: {
-        "z": JSON.stringify(this.zoom),
-        "x": JSON.stringify(this.center.lat),
-        "y": JSON.stringify(this.center.lng),
+    const bounds = this.leafletMap.getBounds();
+    const northWest = bounds.getNorthWest();
+    const northEast = bounds.getNorthEast();
+    const southWest = bounds.getSouthWest();
+    const southEast = bounds.getSouthEast();
+    const zoom = this.leafletMap.getZoom();
+    const center = this.leafletMap.getCenter();
+
+    const northEastBoundary: Point2D = new Point2D(northEast.lng, northEast.lat);
+    const northWestBoundary: Point2D = new Point2D(northWest.lng, northWest.lat);
+    const southEastBoundary: Point2D = new Point2D(southEast.lng, southEast.lat);
+    const southWestBoundary: Point2D = new Point2D(southWest.lng, southWest.lat);
+    const centerPoint: Point2D = new Point2D(center.lng, center.lat);
+
+    this.savedMap.center = centerPoint;
+    this.savedMap.zoom = zoom;
+    this.savedMap.northEastBoundary = northEastBoundary;
+    this.savedMap.northWestBoundary = northWestBoundary;
+    this.savedMap.southEastBoundary = southEastBoundary;
+    this.savedMap.southWestBoundary = southWestBoundary;
+
+
+    this.mapService.createMap(this.savedMap).subscribe({
+      next: data => {
+        this.savedMap = data;
+        console.log(this.savedMap);
+        this.router.navigate(['/map/selected/'+this.savedMap.id]);
       }
-    }
+    });
 
-    this.router.navigate(['/map/selected'], navigationExtras);
 
+
+  }
+
+  onMapReady(map: L.Map) {
+    this.leafletMap = map;
   }
 }

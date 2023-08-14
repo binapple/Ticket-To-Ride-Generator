@@ -13,6 +13,7 @@ import {MapDto} from '../../dtos/map';
 import {Point2D} from "../../dtos/point2d";
 import {City} from "../../dtos/city";
 import {MapPoint} from "../../dtos/map-point";
+import {state} from "@angular/animations";
 
 
 
@@ -29,7 +30,7 @@ export class SelectedMapComponent {
     zoom: 4,
     center: [ 48, 16 ]
   };
-
+  mapL!: L.Map;
 
   // Leaflet options
   options = {
@@ -47,7 +48,7 @@ export class SelectedMapComponent {
   };
 
   emptyPoint: Point2D = new Point2D(0,0);
-  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0);
+  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0);
   mapLoaded = false;
   cities: City[] = [];
   selectedCities: City[] = [];
@@ -67,59 +68,41 @@ export class SelectedMapComponent {
   }
 
   ngOnInit(): void {
-    let x;
-    let y;
-    this.route.queryParams.subscribe(params => {
-      this.optionsSpec.zoom = JSON.parse(params["z"]);
-      x = JSON.parse(params["x"]);
-      y = JSON.parse(params["y"]);
-    })
+    this.route.paramMap.subscribe(params => {
 
-    this.optionsSpec.center = [ x, y ];
-    this.options = {
-      layers: [tileLayer(this.optionsSpec.layers[0].url, {attribution: this.optionsSpec.layers[0].attribution})],
-      zoom: this.optionsSpec.zoom,
-      zoomControl: false,
-      dragging: false,
-      touchZoom: false,
-      doubleClickZoom: false,
-      scrollWheelZoom: false,
-      boxZoom: false,
-      keyboard: false,
-      tap: false,
-      center: latLng(this.optionsSpec.center)
-    };
+      const id = params.get('id');
+
+      if(id != null)
+      {
+        this.savedMap.id = Number(id);
+        this.mapService.getMap(this.savedMap.id).subscribe({
+          next: data => {
+            this.savedMap = data;
+            this.optionsSpec.center = [this.savedMap.center.y, this.savedMap.center.x];
+            this.optionsSpec.zoom = this.savedMap.zoom;
+            this.options = {
+              layers: [tileLayer(this.optionsSpec.layers[0].url, {attribution: this.optionsSpec.layers[0].attribution})],
+              zoom: this.optionsSpec.zoom,
+              zoomControl: false,
+              dragging: false,
+              touchZoom: false,
+              doubleClickZoom: false,
+              scrollWheelZoom: false,
+              boxZoom: false,
+              keyboard: false,
+              tap: false,
+              center: latLng(this.optionsSpec.center)
+            };
+            this.mapL.setView(this.options.center, this.options.zoom);
+          }
+        })
+      }
+    });
   }
 
   onMapReady(mapL: map) {
-    const bounds = mapL.getBounds();
-    const northWest = bounds.getNorthWest();
-    const northEast = bounds.getNorthEast();
-    const southWest = bounds.getSouthWest();
-    const southEast = bounds.getSouthEast();
-    const zoom = mapL.getZoom();
-
-    const northEastBoundary: Point2D = new Point2D(northEast.lng, northEast.lat);
-    const northWestBoundary: Point2D = new Point2D(northWest.lng, northWest.lat);
-    const southEastBoundary: Point2D = new Point2D(southEast.lng, southEast.lat);
-    const southWestBoundary: Point2D = new Point2D(southWest.lng, southWest.lat);
-
-
-    this.savedMap.zoom = zoom;
-    this.savedMap.northEastBoundary = northEastBoundary;
-    this.savedMap.northWestBoundary = northWestBoundary;
-    this.savedMap.southEastBoundary = southEastBoundary;
-    this.savedMap.southWestBoundary = southWestBoundary;
-
-
-    this.mapService.createMap(this.savedMap).subscribe({
-      next: data => {
-        this.savedMap = data;
-        console.log(this.savedMap);
-        this.mapLoaded = true;
-      }
-    });
-
+    this.mapL = mapL;
+    this.mapLoaded = true;
 
 
   }
@@ -236,7 +219,7 @@ export class SelectedMapComponent {
   loadMapPoints() {
     if (this.savedMap.id != null && this.selectedCities.length > 0)
     {
-      this.mapService.createMapPoints(this.savedMap.id, this.selectedCities).subscribe({
+      this.mapService.showMapPoints(this.savedMap.id, this.selectedCities).subscribe({
           next: data => {
             this.mapPoints = data;
 
@@ -277,5 +260,15 @@ export class SelectedMapComponent {
         }
       )
     }
+  }
+
+  colorMap() {
+    this.mapService.colorizeMapPoints(this.savedMap.id, this.selectedCities).subscribe({
+      next: data => {
+        this.mapPoints = data;
+        this.router.navigate(['/map/colorized/'+this.savedMap.id], {state:{data: this.mapPoints}})
+      }
+    });
+
   }
 }

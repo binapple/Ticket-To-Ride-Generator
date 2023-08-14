@@ -4,14 +4,7 @@ import java.awt.geom.Point2D;
 import java.util.HashSet;
 import java.util.Set;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.*;
 
 @Entity (name = "map")
 public class Map {
@@ -31,6 +24,9 @@ public class Map {
   @Column(name = "south_east_boundary")
   private Point2D.Float southEastBoundary;
 
+  @Column(name = "center")
+  private Point2D.Float center;
+
   @Column(columnDefinition = "integer default 5")
   private int zoom;
   @ManyToMany
@@ -39,6 +35,9 @@ public class Map {
       joinColumns = @JoinColumn(name = "map_id"),
       inverseJoinColumns =  @JoinColumn(name = "city_id"))
   private Set<City> cities = new HashSet<>();
+
+  @OneToMany (mappedBy = "map")
+  private Set<MapPoint> mapPoints = new HashSet<>();
 
   public void setId(Long id) {
     this.id = id;
@@ -107,4 +106,19 @@ public class Map {
     city.getMaps().remove(this);
   }
 
+  public Set<MapPoint> getMapPoints() {
+    return mapPoints;
+  }
+
+  public void setMapPoints(Set<MapPoint> mapPoints) {
+    this.mapPoints = mapPoints;
+  }
+
+  public Point2D.Float getCenter() {
+    return center;
+  }
+
+  public void setCenter(Point2D.Float center) {
+    this.center = center;
+  }
 }

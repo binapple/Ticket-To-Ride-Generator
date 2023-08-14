@@ -10,6 +10,7 @@ import { SelectedMapComponent } from './components/selected-map/selected-map.com
 import {HttpClientModule} from "@angular/common/http";
 import {SearchCityPipe} from "./components/selected-map/search-city.pipe";
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { ColoredMapComponent } from './components/colored-map/colored-map.component';
 
 
 @NgModule({
@@ -17,7 +18,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     AppComponent,
     MapComponent,
     SelectedMapComponent,
-    SearchCityPipe
+    SearchCityPipe,
+    ColoredMapComponent
 
   ],
   imports: [

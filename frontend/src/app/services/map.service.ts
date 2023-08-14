@@ -19,12 +19,22 @@ export class MapService {
    *
    * @param map map to create in the system
    *
-   * @returns an map representation of the registered trainer
+   * @returns an mapDto representation of the registered map
    */
   createMap (map: MapDto): Observable<MapDto> {
     return this.httpClient.post<MapDto>(this.baseURI + '/maps', map);
   }
 
+  /**
+   * loads a map from the system
+   *
+   * @param id of map to fetch from the system
+   *
+   * @returns an mapDto representation of the registered map
+   */
+  getMap (id: number): Observable<MapDto> {
+    return this.httpClient.get<MapDto>(this.baseURI+ '/maps/' + id);
+  }
 
   /**
    * gets all cities belonging to map
@@ -49,14 +59,27 @@ export class MapService {
   }
 
   /**
-   * sets current chosen cities as MapPoints. MapPoints are used for later calculations
+   * shows current chosen cities as MapPoints. MapPoints are used for later calculations
    *
    * @param id of map saved on server
    * @param cities list of chosen cities
    *
    * @returns a list of mapPoints
    */
-  createMapPoints(id: number, cities: City[]):Observable<MapPoint[]> {
+  showMapPoints(id: number, cities: City[]):Observable<MapPoint[]> {
     return this.httpClient.post<MapPoint[]>(this.baseURI + '/maps/selection/' +id,cities);
+  }
+
+  /**
+   * colorizes the prior chosen MapPoints and saves them to the map
+   *
+   * @param id of map saved on server
+   * @param cities list of chosen cities
+   *
+   * @returns a list of mapPoints
+   */
+  colorizeMapPoints(id: number, cities: City[]):Observable<MapPoint[]>
+  {
+    return this.httpClient.post<MapPoint[]>(this.baseURI + '/maps/colorization/' +id,cities);
   }
 }

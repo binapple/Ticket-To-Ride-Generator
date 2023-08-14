@@ -7,7 +7,6 @@ import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
 import com.example.backend.endpoint.dto.MapPointDto;
 import com.example.backend.service.MapService;
-import jakarta.persistence.Column;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -36,11 +35,26 @@ public class MapEndpoint {
     return mapService.create(createMapDto);
   }
 
+  @GetMapping(value = "/{id}")
+  @CrossOrigin(origins = "http://localhost:4200")
+  @ResponseStatus(HttpStatus.OK)
+  public CreateMapDto getMap(@PathVariable Long id)
+  {
+    return mapService.get(id);
+  }
+
   @PostMapping(value = "/selection/{id}")
   @CrossOrigin(origins = "http://localhost:4200")
   @ResponseStatus(HttpStatus.OK)
-  public List<MapPointDto> createMapPoints(@PathVariable Long id,@RequestBody List<CityDto> cityDtos) {
-    return mapService.createMapPoints(id,cityDtos);
+  public List<MapPointDto> showMapPoints(@PathVariable Long id,@RequestBody List<CityDto> cityDtos) {
+    return mapService.createMapPoints(id,cityDtos, false);
+  }
+
+  @PostMapping(value = "/colorization/{id}")
+  @CrossOrigin(origins = "http://localhost:4200")
+  @ResponseStatus(HttpStatus.OK)
+  public List<MapPointDto> colorizeMapPoints(@PathVariable Long id,@RequestBody List<CityDto> cityDtos) {
+    return mapService.colorizeMapPoints(id,cityDtos);
   }
 
   @GetMapping(value = "/cities/{id}")

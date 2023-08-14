@@ -15,6 +15,7 @@
   <button (click)="backButton()">Back to Map selection</button>
   <button (click)="loadCities()" *ngIf="mapLoaded">Load Cities for this Map</button>
   <button (click)="loadTowns()" *ngIf="citiesLoaded">Load Towns for this Map (may take a while!)</button>
+  <button (click)="colorMap()" *ngIf="mapLoaded">Use these Cities!</button>
   <br>
   <label for="searchCityName" >Search for a City:</label>
   <input type="text" id="searchCityName" [(ngModel)]="searchCity.name">
