@@ -57,6 +57,13 @@ public class MapEndpoint {
     return mapService.colorizeMapPoints(id,cityDtos);
   }
 
+  @GetMapping(value = "/mapPoints/{id}")
+  @CrossOrigin(origins = "http://localhost:4200")
+  @ResponseStatus(HttpStatus.OK)
+  public List<MapPointDto> getMapPoints(@PathVariable Long id) {
+    return mapService.getMapPoints(id);
+  }
+
   @GetMapping(value = "/cities/{id}")
   @CrossOrigin(origins = "http://localhost:4200")
   @ResponseStatus(HttpStatus.OK)

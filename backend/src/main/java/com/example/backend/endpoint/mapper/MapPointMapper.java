@@ -27,6 +27,7 @@ public interface MapPointMapper {
             toAdd.setId(m.getId());
             toAdd.setLocation(m.getLocation());
             toAdd.setName(m.getName());
+            toAdd.setColor(m.getColor());
             List<Long> neighborIds = new ArrayList<>();
             for (MapPoint n: m.getNeighbors()
                  ) {

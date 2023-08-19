@@ -69,4 +69,12 @@ public interface MapService {
    * @return a CreateMapDto
    */
     CreateMapDto get(Long id);
+
+  /**
+   * Gets all MapPoints from a certain Map
+   *
+   * @param id of the Map
+   * @return a List of MapPointDtos
+   */
+    List<MapPointDto> getMapPoints(Long id);
 }

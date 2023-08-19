@@ -11,7 +11,9 @@ import {MapPoint} from "../dtos/map-point";
 export class MapService {
 
   private baseURI = 'http://localhost:8080/api';
-  constructor(private httpClient: HttpClient) { }
+
+  constructor(private httpClient: HttpClient) {
+  }
 
 
   /**
@@ -21,7 +23,7 @@ export class MapService {
    *
    * @returns an mapDto representation of the registered map
    */
-  createMap (map: MapDto): Observable<MapDto> {
+  createMap(map: MapDto): Observable<MapDto> {
     return this.httpClient.post<MapDto>(this.baseURI + '/maps', map);
   }
 
@@ -32,8 +34,8 @@ export class MapService {
    *
    * @returns an mapDto representation of the registered map
    */
-  getMap (id: number): Observable<MapDto> {
-    return this.httpClient.get<MapDto>(this.baseURI+ '/maps/' + id);
+  getMap(id: number): Observable<MapDto> {
+    return this.httpClient.get<MapDto>(this.baseURI + '/maps/' + id);
   }
 
   /**
@@ -43,7 +45,7 @@ export class MapService {
    *
    * @returns a list of cites
    */
-  getCities (id: number): Observable<City[]> {
+  getCities(id: number): Observable<City[]> {
     return this.httpClient.get<City[]>(this.baseURI + '/maps/cities/' + id);
   }
 
@@ -54,7 +56,7 @@ export class MapService {
    *
    * @returns a list of cities (towns are also saved as cities)
    */
-  getTowns(id: number):Observable<City[]> {
+  getTowns(id: number): Observable<City[]> {
     return this.httpClient.get<City[]>(this.baseURI + '/maps/towns/' + id);
   }
 
@@ -66,8 +68,8 @@ export class MapService {
    *
    * @returns a list of mapPoints
    */
-  showMapPoints(id: number, cities: City[]):Observable<MapPoint[]> {
-    return this.httpClient.post<MapPoint[]>(this.baseURI + '/maps/selection/' +id,cities);
+  showMapPoints(id: number, cities: City[]): Observable<MapPoint[]> {
+    return this.httpClient.post<MapPoint[]>(this.baseURI + '/maps/selection/' + id, cities);
   }
 
   /**
@@ -78,8 +80,18 @@ export class MapService {
    *
    * @returns a list of mapPoints
    */
-  colorizeMapPoints(id: number, cities: City[]):Observable<MapPoint[]>
-  {
-    return this.httpClient.post<MapPoint[]>(this.baseURI + '/maps/colorization/' +id,cities);
+  colorizeMapPoints(id: number, cities: City[]): Observable<MapPoint[]> {
+    return this.httpClient.post<MapPoint[]>(this.baseURI + '/maps/colorization/' + id, cities);
+  }
+
+  /**
+   * gets all MapPoints of a certain map
+   *
+   * @param id of map saved on server
+   *
+   * @returns a list of mapPoints corresponding to the map
+   */
+  getMapPoints(id: number): Observable<MapPoint[]> {
+    return this.httpClient.get<MapPoint[]>(this.baseURI + '/maps/mapPoints/' + id);
   }
 }

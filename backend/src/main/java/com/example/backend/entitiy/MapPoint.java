@@ -23,11 +23,14 @@ public class MapPoint {
 
     private Colorization color = Colorization.CITY;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private MapPoint neighbor;
+    @ManyToMany(mappedBy = "neighbors")
+    private Set<MapPoint> neighbor;
 
-    @OneToMany(mappedBy = "neighbor")
-    private List<MapPoint> neighbors;
+    @ManyToMany
+    @JoinTable(name = "MAPPOINT_NEIGHBORS",
+        joinColumns = {@JoinColumn(name = "MAPPOINT_ID")},
+        inverseJoinColumns = {@JoinColumn(name = "NEIGHBOR_ID")})
+    private Set<MapPoint> neighbors;
     @ManyToOne
     @JoinColumn(name = "map_id")
     private Map map;
@@ -58,14 +61,6 @@ public class MapPoint {
         this.name = name;
     }
 
-    public List<MapPoint> getNeighbors() {
-        return neighbors;
-    }
-
-    public void setNeighbors(List<MapPoint> neighbors) {
-        this.neighbors = neighbors;
-    }
-
     public boolean isConnectionIssue() {
         return connectionIssue;
     }
@@ -88,5 +83,21 @@ public class MapPoint {
 
     public void setMap(Map map) {
         this.map = map;
+    }
+
+    public Set<MapPoint> getNeighbor() {
+        return neighbor;
+    }
+
+    public void setNeighbor(Set<MapPoint> neighbor) {
+        this.neighbor = neighbor;
+    }
+
+    public Set<MapPoint> getNeighbors() {
+        return neighbors;
+    }
+
+    public void setNeighbors(Set<MapPoint> neighbors) {
+        this.neighbors = neighbors;
     }
 }

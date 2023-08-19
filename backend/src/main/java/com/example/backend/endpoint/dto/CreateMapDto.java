@@ -1,6 +1,5 @@
 package com.example.backend.endpoint.dto;
 
-import java.awt.Point;
 import java.awt.geom.Point2D;
 
 public class CreateMapDto {

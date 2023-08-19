@@ -1,20 +1,22 @@
 import {Point2D} from "./point2d";
+import {Colorization} from "./colorization";
 
 export class MapPoint {
   id: number;
   name: string;
   location: Point2D;
   neighbors: number[];
-  isDrawn: boolean;
+  isDrawn = false;
   connectionIssue: boolean;
+  color: Colorization;
 
-
-  constructor(id: number, name: string, location: Point2D, neighbors: number[], isDrawn: boolean, connectionIssue: boolean) {
+  constructor(id: number, name: string, location: Point2D, neighbors: number[], isDrawn: boolean, connectionIssue: boolean, color: Colorization) {
     this.id = id;
     this.name = name;
     this.location = location;
     this.neighbors = neighbors;
     this.isDrawn = isDrawn;
     this.connectionIssue = connectionIssue;
+    this.color = color;
   }
 }

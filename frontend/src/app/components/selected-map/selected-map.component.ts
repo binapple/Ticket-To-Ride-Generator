@@ -253,6 +253,7 @@ export class SelectedMapComponent {
                 }
               )
 
+              mp.isDrawn = true;
 
             })
 

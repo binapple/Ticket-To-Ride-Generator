@@ -23,8 +23,10 @@ import com.example.backend.repository.CityRepository;
 import com.example.backend.repository.MapPointRepository;
 import com.example.backend.repository.MapRepository;
 import com.example.backend.service.MapService;
+import com.example.backend.type.Colorization;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphTests;
 import org.jgrapht.Graphs;
@@ -203,10 +205,16 @@ public class MapServiceImpl implements MapService {
 
       newPoint.setLocation(c.getLocation());
       newPoint.setName(c.getName());
-      newPoint.setId(c.getId());
+      newPoint.setNeighbors(new HashSet<>());
       if(save)
       {
+          newPoint.setColor(Colorization.CITY);
+          newPoint.setConnectionIssue(false);
+          newPoint.setMap(map);
           newPoint = this.mapPointRepository.save(newPoint);
+      }
+      else {
+          newPoint.setId(c.getId());
       }
       graph.addVertex(newPoint);
     }
@@ -236,20 +244,23 @@ public class MapServiceImpl implements MapService {
 
       for (MapPoint p: graph.vertexSet()
            ) {
-          List<MapPoint> neighbors = new ArrayList<>();
+          Set<MapPoint> pNeighbors = new HashSet<>();
           for (DefaultWeightedEdge e: graph.edgesOf(p)
                ) {
               MapPoint source = graph.getEdgeSource(e);
               MapPoint target = graph.getEdgeTarget(e);
+
               if(!source.equals(p))
               {
-                  neighbors.add(source);
+                  pNeighbors.add(source);
               } else
               {
-                  neighbors.add(target);
+                  pNeighbors.add(target);
               }
+
           }
-          p.setNeighbors(neighbors);
+          p.setNeighbors(pNeighbors);
+
       }
 
       Set<MapPoint> mapPointsWithNeighbors = graph.vertexSet();
@@ -427,9 +438,18 @@ public class MapServiceImpl implements MapService {
     public List<MapPointDto> colorizeMapPoints(Long id, List<CityDto> cityDtos) {
         List<MapPointDto> mapPointDtoList = this.createMapPoints(id, cityDtos, true);
 
-        Graph<MapPoint, DefaultWeightedEdge> graph = this.generateGraphFromMapPointDtos(mapPointDtoList);
+        Graph<MapPoint, DefaultWeightedEdge> graph = this.generateGraphFromMap(id);
 
         Set<DefaultWeightedEdge> edgeSet = graph.edgeSet();
+
+        for (MapPoint mP:
+             graph.vertexSet()) {
+            mP.setColor(Colorization.CITY);
+            mP.setNeighbors(new HashSet<>());
+            mP.setNeighbor(new HashSet<>());
+            this.mapPointRepository.save(mP);
+        }
+
 
         Map map = this.mapRepository.getReferenceById(id);
 
@@ -454,30 +474,153 @@ public class MapServiceImpl implements MapService {
 
         // each color should have equal amount of connections
         int colorMax = (connectionCount - colorless) / 8;
+        java.util.Map<Colorization, Integer> colorMaxMap = new HashMap<Colorization, Integer>();
+        for (Colorization color: Colorization.values()
+             ) {
+            colorMaxMap.put(color, colorMax);
+        }
+        colorMaxMap.put(Colorization.COLORLESS, colorless+colorMax);
+        colorMaxMap.put(Colorization.CITY, 0);
+
+        //Random number Generator for color distribution
+        Random random = new Random();
+
+        //Colorization for each of the cities: Set is used to check if neighboring city is already finished coloring their edges
+       Set<Long> coloredCities = new HashSet<>();
+
+        Colorization[] colorizations = Colorization.values();
+
+        for (MapPoint mP: graph.vertexSet()
+             ) {
+
+            if(mP.getColor() == Colorization.CITY) {
+
+                //one city can not have duplicates of same colored connections
+                java.util.Map<Colorization, Integer> cityColorCount = new HashMap<>();
+                for (Colorization c: Colorization.values()
+                     ) {
+                    cityColorCount.put(c,1);
+                }
+                cityColorCount.put(Colorization.COLORLESS, colorless+colorMax);
+                cityColorCount.put(Colorization.CITY,0);
+
+                for (DefaultWeightedEdge e :
+                        graph.outgoingEdgesOf(mP)) {
+
+                    //check if neigboring city is already colored
+                    MapPoint origin = graph.getEdgeSource(e);
+                    MapPoint destination = graph.getEdgeTarget(e);
+
+                    //set origin to be mP (for later calculations necessary)
+                    if(origin != mP)
+                    {
+                        destination = origin;
+                        origin= mP;
+                    }
+
+                    if (!coloredCities.contains(destination.getId()) && !coloredCities.contains(origin.getId())) {
+
+                        Colorization edgeColor = null;
+                        boolean check = false;
+                        do {
+                            //getting random Color (colorless included)
+                            int colorNum = random.nextInt(9 - 1 + 1) + 1;
+                            edgeColor = colorizations[colorNum];
+
+                            //check if color maximum has been reached & check if already used in the city
+                            if(cityColorCount.get(edgeColor) > 0) {
+                                if (colorMaxMap.get(edgeColor) > 0) {
+                                    check = true;
+                                }
+                            }
+                        } while (!check);
+
+                        //update cities "color-tracking" Map and usage of the same color in overall "tracking" Map
+                        int oldCityValue = cityColorCount.get(edgeColor);
+                        cityColorCount.put(edgeColor, oldCityValue - 1);
+                        int oldMaxValue = colorMaxMap.get(edgeColor);
+                        colorMaxMap.put(edgeColor, oldMaxValue - 1);
+
+                        double edgeLength = graph.getEdgeWeight(e);
+
+                        double edgeDivision = edgeLength / trainsize;
+                        int edgeSize = (int) Math.floor(edgeDivision);
+
+                        //split the edge into train-sized parts, therefore calculate slope of the edge
+                        float edgeSlope = (destination.getLocation().y - origin.getLocation().y) / (destination.getLocation().x - origin.getLocation().x);
 
 
+                        MapPoint toNeighbor = origin;
 
-        Set<MapPoint> mapPointSet = graph.vertexSet();
+                        //For each trainsized part of the Connection add a new "in-between" MapPoint (for later editing of connections)
+                        for (int i = 0; i < edgeSize-1; i++) {
+                            float newX = (float) (toNeighbor.getLocation().x + (trainsize / Math.sqrt(1 + Math.pow(edgeSlope, 2))));
+                            float newY = (float) (toNeighbor.getLocation().y + (edgeSlope * (newX - toNeighbor.getLocation().x)));
+                            MapPoint toBeSaved = new MapPoint();
+                            toBeSaved.setColor(edgeColor);
+                            toBeSaved.setMap(map);
+                            toBeSaved.setLocation(new Point2D.Float(newX, newY));
+                            Set<MapPoint> toBeSavedNeighbors = new HashSet<>();
 
-        ArrayList<MapPoint> mapPointArrayList = new ArrayList<>(mapPointSet);
+                            Set<MapPoint> oldNeighbors = toNeighbor.getNeighbors();
 
-        return this.mapPointMapper.mapPointListToMapPointDtoListCustom(mapPointArrayList);
+                            oldNeighbors.add(toBeSaved);
+                            toBeSavedNeighbors.add(toNeighbor);
+                            toBeSaved.setNeighbors(toBeSavedNeighbors);
+                            toNeighbor.setNeighbors(oldNeighbors);
+
+                            this.mapPointRepository.save(toBeSaved);
+                            this.mapPointRepository.save(toNeighbor);
+
+                            toNeighbor = toBeSaved;
+                        }
+
+                        //final MapPoint has to be added to destination as a neighbor and vice versa
+                        Set<MapPoint> toBeAddedToDestination = destination.getNeighbors();
+                        Set<MapPoint> oldNeigbors = toNeighbor.getNeighbors();
+
+                        oldNeigbors.add(destination);
+                        toBeAddedToDestination.add(toNeighbor);
+                        toNeighbor.setNeighbors(oldNeigbors);
+                        destination.setNeighbors(toBeAddedToDestination);
+
+                        this.mapPointRepository.save(destination);
+                        this.mapPointRepository.save(toNeighbor);
+
+                    }
+                }
+
+                //add finished city to be already colored
+                coloredCities.add(mP.getId());
+
+            }
+
+        }
+
+        List<MapPoint> mapPointList = this.mapPointRepository.findMapPointsByMapId(id);
+
+        return this.mapPointMapper.mapPointListToMapPointDtoListCustom(mapPointList);
 
 
 
     }
 
-    private Graph<MapPoint, DefaultWeightedEdge> generateGraphFromMapPointDtos(List<MapPointDto> mapPointDtoList) {
+    @Override
+    public List<MapPointDto> getMapPoints(Long id) {
+        return this.mapPointMapper.mapPointListToMapPointDtoListCustom(this.mapPointRepository.findMapPointsByMapId(id));
+    }
+
+    private Graph<MapPoint, DefaultWeightedEdge> generateGraphFromMap(long id) {
       Graph<MapPoint,DefaultWeightedEdge> graph = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
 
-      mapPointDtoList.sort(Comparator.comparing(MapPointDto::getId));
+      List<MapPoint> savedMapPoints = this.mapPointRepository.findMapPointsByMapId(id);
+
+      savedMapPoints.sort(Comparator.comparing(MapPoint::getId));
 
       //Add MapPoints to graph
-        for (MapPointDto mPD: mapPointDtoList
+        for (MapPoint mP: savedMapPoints
              ) {
-            MapPoint toAdd = new MapPoint();
-            toAdd = this.mapPointRepository.getReferenceById(mPD.getId());
-            graph.addVertex(toAdd);
+            graph.addVertex(mP);
         }
 
         //Add edges to graph
