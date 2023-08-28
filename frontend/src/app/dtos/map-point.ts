@@ -8,9 +8,10 @@ export class MapPoint {
   neighbors: number[];
   isDrawn = false;
   connectionIssue: boolean;
+  hasTunnel: boolean;
   color: Colorization;
 
-  constructor(id: number, name: string, location: Point2D, neighbors: number[], isDrawn: boolean, connectionIssue: boolean, color: Colorization) {
+  constructor(id: number, name: string, location: Point2D, neighbors: number[], isDrawn: boolean, connectionIssue: boolean, hasTunnel: boolean, color: Colorization) {
     this.id = id;
     this.name = name;
     this.location = location;
@@ -18,5 +19,6 @@ export class MapPoint {
     this.isDrawn = isDrawn;
     this.connectionIssue = connectionIssue;
     this.color = color;
+    this.hasTunnel = hasTunnel;
   }
 }

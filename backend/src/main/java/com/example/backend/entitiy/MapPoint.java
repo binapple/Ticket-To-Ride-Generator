@@ -36,6 +36,7 @@ public class MapPoint {
     private Map map;
 
     private boolean connectionIssue;
+    private boolean hasTunnel;
 
     public Long getId() {
         return id;
@@ -99,5 +100,13 @@ public class MapPoint {
 
     public void setNeighbors(Set<MapPoint> neighbors) {
         this.neighbors = neighbors;
+    }
+
+    public boolean isHasTunnel() {
+        return hasTunnel;
+    }
+
+    public void setHasTunnel(boolean hasTunnel) {
+        this.hasTunnel = hasTunnel;
     }
 }

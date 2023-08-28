@@ -163,8 +163,13 @@ export class ColoredMapComponent implements OnInit {
                   break;
               }
 
+              const lineWeight = 3;
 
-              this.layers.push(polyline(LatLngs, {color: color, interactive: false}));
+              if(mp.hasTunnel)
+              {
+                this.layers.push(polyline(LatLngs, {color: '#000', interactive: false, weight:lineWeight+2}));
+              }
+              this.layers.push(polyline(LatLngs, {color: color, interactive: false, weight:lineWeight,}));
             }
           });
         const circleLatLng = new LatLng(mp.location.y, mp.location.x);

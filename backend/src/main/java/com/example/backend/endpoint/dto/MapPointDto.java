@@ -21,6 +21,8 @@ public class MapPointDto {
 
     private boolean connectionIssue;
 
+    private boolean hasTunnel;
+
     public Long getId() {
         return id;
     }
@@ -67,5 +69,13 @@ public class MapPointDto {
 
     public void setColor(Colorization color) {
         this.color = color;
+    }
+
+    public boolean isHasTunnel() {
+        return hasTunnel;
+    }
+
+    public void setHasTunnel(boolean hasTunnel) {
+        this.hasTunnel = hasTunnel;
     }
 }

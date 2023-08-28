@@ -298,12 +298,13 @@ public class MapServiceImpl implements MapService {
       float eight = trainsize * 8;
       float six = trainsize * 6;
       float five = trainsize * 5;
+      float four = trainsize * 4;
 
       //remove connections with greater equal length then eight and leave 1 of eight
       //then remove all of 7 and all of 6 except 2
       //then remove all of 5
       float tooBigSize = eight * 2;
-      while (tooBigSize >= five) {
+      while (tooBigSize > four) {
 
           //This step is used to have a DefaultWeightEdge Object of the graph that can be deleted and is needed for binary search
           Iterator<DefaultWeightedEdge> i = edgeList.iterator();
@@ -345,17 +346,23 @@ public class MapServiceImpl implements MapService {
           graph.removeEdge(e);
           edgeList.remove(e);
 
+          //used to keep long edges
+          int startIndex = 0;
           if (tooBigSize <= eight && tooBigSize > six) {
-              index = index - 1;
+              startIndex = startIndex + 1;
           }
           if (tooBigSize <= six) {
-              index = index - 3;
-          }
-          if (index < 0) {
-              index = 0;
+              startIndex = startIndex + 3;
           }
 
-          List<DefaultWeightedEdge> toRemove = edgeList.subList(0, index);
+          List<DefaultWeightedEdge> toRemove;
+          if (index < 0) {
+              index = 0;
+              toRemove = Collections.emptyList();
+          }
+          else {
+            toRemove=edgeList.subList(startIndex, index);
+          }
           graph.removeAllEdges(toRemove);
 
           if (GraphTests.isConnected(graph)) {
@@ -393,10 +400,22 @@ public class MapServiceImpl implements MapService {
                               double weightEdge = graph.getEdgeWeight(e);
                               double weightInter = graph.getEdgeWeight(intersect);
                               if (weightEdge > weightInter) {
-                                  graph.removeEdge(e);
-                                  break;
+                                  if(weightEdge > five)
+                                  {
+                                      graph.removeEdge(intersect);
+                                  } else {
+                                      graph.removeEdge(e);
+                                      break;
+                                  }
                               } else {
-                                  graph.removeEdge(intersect);
+                                  if(weightInter > five)
+                                  {
+                                      graph.removeEdge(e);
+                                      break;
+                                  } else {
+
+                                      graph.removeEdge(intersect);
+                                  }
                               }
                       }
                   }
@@ -442,6 +461,7 @@ public class MapServiceImpl implements MapService {
 
         Set<DefaultWeightedEdge> edgeSet = graph.edgeSet();
 
+        //resetting neighbors after saving Cities as graph
         for (MapPoint mP:
              graph.vertexSet()) {
             mP.setColor(Colorization.CITY);
@@ -472,23 +492,44 @@ public class MapServiceImpl implements MapService {
         int jokerCount = colorless / 3;
         int tunnelCount = jokerCount;
 
+        Colorization[] colorizations = Colorization.values();
+
         // each color should have equal amount of connections
         int colorMax = (connectionCount - colorless) / 8;
         java.util.Map<Colorization, Integer> colorMaxMap = new HashMap<Colorization, Integer>();
-        for (Colorization color: Colorization.values()
+        for (Colorization color: colorizations
              ) {
             colorMaxMap.put(color, colorMax);
         }
         colorMaxMap.put(Colorization.COLORLESS, colorless+colorMax);
         colorMaxMap.put(Colorization.CITY, 0);
 
-        //Random number Generator for color distribution
-        Random random = new Random();
+        //each color should once have a tunnel
+        java.util.Map<Colorization, Boolean> tunnelColorCheck = new HashMap<>();
+        for (Colorization color: colorizations)
+        {
+            tunnelColorCheck.put(color,false);
+        }
+        tunnelColorCheck.put(Colorization.COLORLESS,true);
+        tunnelColorCheck.put(Colorization.CITY,true);
 
-        //Colorization for each of the cities: Set is used to check if neighboring city is already finished coloring their edges
+        //Colorization for each of the cities: Set is used to check if neighboring city has already finished coloring their edges
        Set<Long> coloredCities = new HashSet<>();
 
-        Colorization[] colorizations = Colorization.values();
+       //Keep track of the Colors that a city has used
+       java.util.Map<MapPoint, java.util.Map<Colorization, Integer>> mapPointColorCounter = new HashMap<>();
+       //Inintialize values to 1 times per MapPoint (only cities)
+        for (MapPoint mP:
+             graph.vertexSet()) {
+            java.util.Map<Colorization, Integer> colorCountMap = new HashMap<>();
+            for (Colorization color: colorizations
+                 ) {
+                colorCountMap.put(color, 1);
+            }
+            colorCountMap.put(Colorization.CITY,0);
+            colorCountMap.put(Colorization.COLORLESS, colorless+colorMax);
+            mapPointColorCounter.put(mP, colorCountMap);
+        }
 
         for (MapPoint mP: graph.vertexSet()
              ) {
@@ -496,16 +537,13 @@ public class MapServiceImpl implements MapService {
             if(mP.getColor() == Colorization.CITY) {
 
                 //one city can not have duplicates of same colored connections
-                java.util.Map<Colorization, Integer> cityColorCount = new HashMap<>();
-                for (Colorization c: Colorization.values()
-                     ) {
-                    cityColorCount.put(c,1);
-                }
-                cityColorCount.put(Colorization.COLORLESS, colorless+colorMax);
-                cityColorCount.put(Colorization.CITY,0);
+                java.util.Map<Colorization, Integer> cityColorCount = mapPointColorCounter.get(mP);
+
+                //to not have all colored tunnels clustered too much their usage per Vertex will be reduced
+                int tunnelCityMax = 3;
 
                 for (DefaultWeightedEdge e :
-                        graph.outgoingEdgesOf(mP)) {
+                        graph.edgesOf(mP)) {
 
                     //check if neigboring city is already colored
                     MapPoint origin = graph.getEdgeSource(e);
@@ -520,45 +558,57 @@ public class MapServiceImpl implements MapService {
 
                     if (!coloredCities.contains(destination.getId()) && !coloredCities.contains(origin.getId())) {
 
-                        Colorization edgeColor = null;
-                        boolean check = false;
-                        do {
-                            //getting random Color (colorless included)
-                            int colorNum = random.nextInt(9 - 1 + 1) + 1;
-                            edgeColor = colorizations[colorNum];
-
-                            //check if color maximum has been reached & check if already used in the city
-                            if(cityColorCount.get(edgeColor) > 0) {
-                                if (colorMaxMap.get(edgeColor) > 0) {
-                                    check = true;
-                                }
-                            }
-                        } while (!check);
-
-                        //update cities "color-tracking" Map and usage of the same color in overall "tracking" Map
-                        int oldCityValue = cityColorCount.get(edgeColor);
-                        cityColorCount.put(edgeColor, oldCityValue - 1);
-                        int oldMaxValue = colorMaxMap.get(edgeColor);
-                        colorMaxMap.put(edgeColor, oldMaxValue - 1);
-
                         double edgeLength = graph.getEdgeWeight(e);
 
                         double edgeDivision = edgeLength / trainsize;
                         int edgeSize = (int) Math.floor(edgeDivision);
 
-                        //split the edge into train-sized parts, therefore calculate slope of the edge
-                        float edgeSlope = (destination.getLocation().y - origin.getLocation().y) / (destination.getLocation().x - origin.getLocation().x);
+                        //if edge is longer or equal six it has to be colorless
+                        Colorization edgeColor = Colorization.COLORLESS;
+                        if(edgeSize < 6) {
+                            edgeColor = selectColor(colorizations, colorMaxMap, cityColorCount);
+                        }
 
+
+                        //check if there is a need of adding tunnels (color not yet used, city has not too many tunnels, edge is too short)
+                        boolean toTunnel = false;
+                        if(!tunnelColorCheck.get(edgeColor) && tunnelCityMax > 0 && edgeSize >= 2)
+                        {
+                            toTunnel = true;
+                            tunnelColorCheck.put(edgeColor, true);
+                            tunnelCityMax--;
+                        }
+
+                        //update cities "color-tracking" Map and usage of the same color in overall "tracking" Map
+                        int oldCityValue = cityColorCount.get(edgeColor);
+                        cityColorCount.put(edgeColor, oldCityValue - 1);
+                        java.util.Map<Colorization, Integer> neigborColorMap = mapPointColorCounter.get(destination);
+                        int oldNeighborValue = neigborColorMap.get(edgeColor);
+                        neigborColorMap.put(edgeColor, oldNeighborValue - 1);
+                        int oldMaxValue = colorMaxMap.get(edgeColor);
+                        colorMaxMap.put(edgeColor, oldMaxValue - 1);
+
+
+
+                        //split the edge into train-sized parts, therefore calculate deltas and step-sizes
+                        float deltaX = destination.getLocation().x - origin.getLocation().x;
+                        float deltaY = destination.getLocation().y - origin.getLocation().y;
+                        float distanceBetween = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                        float stepX = deltaX * trainsize / distanceBetween;
+                        float stepY = deltaY * trainsize / distanceBetween;
 
                         MapPoint toNeighbor = origin;
 
                         //For each trainsized part of the Connection add a new "in-between" MapPoint (for later editing of connections)
-                        for (int i = 0; i < edgeSize-1; i++) {
-                            float newX = (float) (toNeighbor.getLocation().x + (trainsize / Math.sqrt(1 + Math.pow(edgeSlope, 2))));
-                            float newY = (float) (toNeighbor.getLocation().y + (edgeSlope * (newX - toNeighbor.getLocation().x)));
+                        for (int i = 0; i < edgeSize; i++) {
+                            float newX = origin.getLocation().x + i * stepX;
+                            float newY = origin.getLocation().y + i * stepY;
+
                             MapPoint toBeSaved = new MapPoint();
                             toBeSaved.setColor(edgeColor);
                             toBeSaved.setMap(map);
+                            toBeSaved.setHasTunnel(toTunnel);
                             toBeSaved.setLocation(new Point2D.Float(newX, newY));
                             Set<MapPoint> toBeSavedNeighbors = new HashSet<>();
 
@@ -576,15 +626,38 @@ public class MapServiceImpl implements MapService {
                         }
 
                         //final MapPoint has to be added to destination as a neighbor and vice versa
-                        Set<MapPoint> toBeAddedToDestination = destination.getNeighbors();
-                        Set<MapPoint> oldNeigbors = toNeighbor.getNeighbors();
+                        //special case: cities too close together to make "in-between" MapPoints, but color still has to be saved somewhere
+                        //therefore we need a new MapPoint at same location as destination with color-information
+                        if(toNeighbor == origin)
+                        {
+                            MapPoint toBeSaved = new MapPoint();
+                            toBeSaved.setColor(edgeColor);
+                            toBeSaved.setHasTunnel(toTunnel);
+                            toBeSaved.setMap(map);
+                            toBeSaved.setLocation(destination.getLocation());
+                            Set<MapPoint> toBeSavedNeighbors = new HashSet<>();
 
-                        oldNeigbors.add(destination);
-                        toBeAddedToDestination.add(toNeighbor);
-                        toNeighbor.setNeighbors(oldNeigbors);
-                        destination.setNeighbors(toBeAddedToDestination);
+                            Set<MapPoint> oldNeighbors = toNeighbor.getNeighbors();
 
-                        this.mapPointRepository.save(destination);
+                            oldNeighbors.add(toBeSaved);
+                            toBeSavedNeighbors.add(toNeighbor);
+                            toBeSaved.setNeighbors(toBeSavedNeighbors);
+                            toNeighbor.setNeighbors(oldNeighbors);
+
+                            this.mapPointRepository.save(toBeSaved);
+                        }
+                        else {
+                            Set<MapPoint> toBeAddedToDestination = destination.getNeighbors();
+                            Set<MapPoint> oldNeigbors = toNeighbor.getNeighbors();
+
+                            oldNeigbors.add(destination);
+                            toBeAddedToDestination.add(toNeighbor);
+                            toNeighbor.setNeighbors(oldNeigbors);
+                            destination.setNeighbors(toBeAddedToDestination);
+                            this.mapPointRepository.save(destination);
+                        }
+
+
                         this.mapPointRepository.save(toNeighbor);
 
                     }
@@ -604,11 +677,29 @@ public class MapServiceImpl implements MapService {
 
 
     }
-
+    
     @Override
     public List<MapPointDto> getMapPoints(Long id) {
         return this.mapPointMapper.mapPointListToMapPointDtoListCustom(this.mapPointRepository.findMapPointsByMapId(id));
     }
+    
+    private Colorization selectColor(Colorization[] colorizations, java.util.Map<Colorization, Integer> colorMaxMap, java.util.Map<Colorization, Integer> cityColorCount) {
+        List<Colorization> availableColors = new ArrayList<>(Arrays.stream(colorizations).toList());
+
+
+        availableColors.removeIf(color -> cityColorCount.get(color) < 1 || colorMaxMap.get(color) < 1);
+
+        if(availableColors.isEmpty())
+        {
+            return Colorization.COLORLESS;
+        }
+
+        //random color is done by shuffling of current available colors
+        Collections.shuffle(availableColors);
+        return availableColors.get(0);
+
+    }
+    
 
     private Graph<MapPoint, DefaultWeightedEdge> generateGraphFromMap(long id) {
       Graph<MapPoint,DefaultWeightedEdge> graph = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
