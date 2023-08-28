@@ -1,13 +1,9 @@
 package com.example.backend.entitiy;
 
 import com.example.backend.type.Colorization;
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.awt.geom.Point2D;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity (name = "mapPoint")

@@ -1,15 +1,5 @@
 package com.example.backend.service.impl;
 
-import java.awt.geom.Line2D;
-import java.awt.geom.Point2D;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-
 import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
 import com.example.backend.endpoint.dto.MapPointDto;
@@ -26,7 +16,6 @@ import com.example.backend.service.MapService;
 import com.example.backend.type.Colorization;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphTests;
 import org.jgrapht.Graphs;
@@ -35,6 +24,16 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @Service
 public class MapServiceImpl implements MapService {
@@ -496,7 +495,7 @@ public class MapServiceImpl implements MapService {
 
         // each color should have equal amount of connections
         int colorMax = (connectionCount - colorless) / 8;
-        java.util.Map<Colorization, Integer> colorMaxMap = new HashMap<Colorization, Integer>();
+        java.util.Map<Colorization, Integer> colorMaxMap = new HashMap<>();
         for (Colorization color: colorizations
              ) {
             colorMaxMap.put(color, colorMax);

@@ -1,7 +1,7 @@
 import {Component} from '@angular/core';
 import {latLng, LatLng, tileLayer,} from 'leaflet';
 import * as L from 'leaflet';
-import {NavigationExtras, Router} from "@angular/router";
+import {Router} from "@angular/router";
 import {MapService} from "../../services/map.service";
 import {Point2D} from "../../dtos/point2d";
 import {MapDto} from "../../dtos/map";

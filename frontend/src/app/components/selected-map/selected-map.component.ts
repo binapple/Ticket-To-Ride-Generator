@@ -1,4 +1,4 @@
-import {Component, NgZone} from '@angular/core';
+import {Component, NgZone, OnInit} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {
   Circle,
@@ -13,7 +13,7 @@ import {MapDto} from '../../dtos/map';
 import {Point2D} from "../../dtos/point2d";
 import {City} from "../../dtos/city";
 import {MapPoint} from "../../dtos/map-point";
-import {state} from "@angular/animations";
+
 
 
 
@@ -22,7 +22,7 @@ import {state} from "@angular/animations";
   templateUrl: './selected-map.component.html',
   styleUrls: ['./selected-map.component.css']
 })
-export class SelectedMapComponent {
+export class SelectedMapComponent implements OnInit{
 
   //minimal map options
   optionsSpec: any = {

@@ -1,7 +1,6 @@
 package com.example.backend.endpoint.dto;
 
 import com.example.backend.type.Colorization;
-import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import java.awt.geom.Point2D;
 import java.util.List;
