@@ -25,6 +25,7 @@ public interface MapPointMapper {
             MapPointDto toAdd = new MapPointDto();
             toAdd.setConnectionIssue(m.isConnectionIssue());
             toAdd.setHasTunnel(m.isHasTunnel());
+            toAdd.setHasJoker(m.isHasJoker());
             toAdd.setId(m.getId());
             toAdd.setLocation(m.getLocation());
             toAdd.setName(m.getName());

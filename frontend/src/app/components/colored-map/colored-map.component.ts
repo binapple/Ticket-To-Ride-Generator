@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {MapPoint} from "../../dtos/map-point";
 import {circle, LatLng, latLng, polyline, tileLayer} from "leaflet";
-import {ActivatedRoute} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 import {Point2D} from "../../dtos/point2d";
 import {MapDto} from "../../dtos/map";
 import {MapService} from "../../services/map.service";
@@ -49,7 +49,8 @@ export class ColoredMapComponent implements OnInit {
 
 
   constructor(private route: ActivatedRoute,
-              private mapService: MapService) {
+              private mapService: MapService,
+              private router: Router) {
   }
 
   ngOnInit() {
@@ -163,13 +164,19 @@ export class ColoredMapComponent implements OnInit {
                   break;
               }
 
-              const lineWeight = 3;
+              const lineWeight = 10;
 
-              if(mp.hasTunnel)
-              {
-                this.layers.push(polyline(LatLngs, {color: '#000', interactive: false, weight:lineWeight+2}));
+              if(destMp !== undefined) {
+                if (destMp.hasTunnel) {
+                  this.layers.push(polyline(LatLngs, {color: '#000', interactive: false, weight: lineWeight + 2}));
+                }
               }
               this.layers.push(polyline(LatLngs, {color: color, interactive: false, weight:lineWeight,}));
+              if(destMp !== undefined) {
+                if (destMp.hasJoker || mp.hasJoker) {
+                  this.layers.push(polyline(LatLngs, {color: '#000', interactive: false, weight: lineWeight / 2}));
+                }
+              }
             }
           });
         const circleLatLng = new LatLng(mp.location.y, mp.location.x);
@@ -188,5 +195,9 @@ export class ColoredMapComponent implements OnInit {
         this.drawMapPoints();
       }
     })
+  }
+
+  backButton() {
+    this.router.navigate(['map/']);
   }
 }

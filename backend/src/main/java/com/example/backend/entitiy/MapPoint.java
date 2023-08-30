@@ -33,6 +33,7 @@ public class MapPoint {
 
     private boolean connectionIssue;
     private boolean hasTunnel;
+    private boolean hasJoker;
 
     public Long getId() {
         return id;
@@ -104,5 +105,13 @@ public class MapPoint {
 
     public void setHasTunnel(boolean hasTunnel) {
         this.hasTunnel = hasTunnel;
+    }
+
+    public boolean isHasJoker() {
+        return hasJoker;
+    }
+
+    public void setHasJoker(boolean hasJoker) {
+        this.hasJoker = hasJoker;
     }
 }

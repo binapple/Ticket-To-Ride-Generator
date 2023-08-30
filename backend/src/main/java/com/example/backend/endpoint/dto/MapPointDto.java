@@ -22,6 +22,8 @@ public class MapPointDto {
 
     private boolean hasTunnel;
 
+    private boolean hasJoker;
+
     public Long getId() {
         return id;
     }
@@ -76,5 +78,13 @@ public class MapPointDto {
 
     public void setHasTunnel(boolean hasTunnel) {
         this.hasTunnel = hasTunnel;
+    }
+
+    public boolean isHasJoker() {
+        return hasJoker;
+    }
+
+    public void setHasJoker(boolean hasJoker) {
+        this.hasJoker = hasJoker;
     }
 }

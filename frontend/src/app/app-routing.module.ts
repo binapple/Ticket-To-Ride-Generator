@@ -5,6 +5,7 @@ import {SelectedMapComponent} from "./components/selected-map/selected-map.compo
 import {ColoredMapComponent} from "./components/colored-map/colored-map.component";
 
 const routes: Routes = [
+  { path: '', redirectTo: '/map', pathMatch: 'full' },
   { path: 'map', children: [
       { path: '', component: MapComponent },
       { path: 'selected', children: [

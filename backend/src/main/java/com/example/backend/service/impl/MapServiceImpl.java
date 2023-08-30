@@ -292,18 +292,17 @@ public class MapServiceImpl implements MapService {
       Point2D.Float sw = map.getSouthWestBoundary();
       Point2D.Float ne = map.getNorthEastBoundary();
 
-      float trainsize = (Math.abs(ne.x - sw.x)) * 26 / 1189;
+      float trainsize = (Math.abs(ne.x - sw.x)) * 26.5f / 1189;
 
       float eight = trainsize * 8;
       float six = trainsize * 6;
       float five = trainsize * 5;
-      float four = trainsize * 4;
 
       //remove connections with greater equal length then eight and leave 1 of eight
       //then remove all of 7 and all of 6 except 2
-      //then remove all of 5
+      //then remove all of 5 (keep ones that are between 4 and 5 as connections are not lines that always start on the city itself)
       float tooBigSize = eight * 2;
-      while (tooBigSize > four) {
+      while (tooBigSize >= five) {
 
           //This step is used to have a DefaultWeightEdge Object of the graph that can be deleted and is needed for binary search
           Iterator<DefaultWeightedEdge> i = edgeList.iterator();
@@ -399,7 +398,7 @@ public class MapServiceImpl implements MapService {
                               double weightEdge = graph.getEdgeWeight(e);
                               double weightInter = graph.getEdgeWeight(intersect);
                               if (weightEdge > weightInter) {
-                                  if(weightEdge > five)
+                                  if(weightEdge > six)
                                   {
                                       graph.removeEdge(intersect);
                                   } else {
@@ -407,7 +406,7 @@ public class MapServiceImpl implements MapService {
                                       break;
                                   }
                               } else {
-                                  if(weightInter > five)
+                                  if(weightInter > six)
                                   {
                                       graph.removeEdge(e);
                                       break;
@@ -476,7 +475,7 @@ public class MapServiceImpl implements MapService {
         Point2D.Float sw = map.getSouthWestBoundary();
         Point2D.Float ne = map.getNorthEastBoundary();
 
-        float trainsize = (Math.abs(ne.x - sw.x)) * 26 / 1189;
+        float trainsize = (Math.abs(ne.x - sw.x)) * 26.5f / 1189;
 
         float eight = trainsize * 8;
         float six = trainsize * 6;
@@ -489,7 +488,11 @@ public class MapServiceImpl implements MapService {
 
         // 1/3 of colorless are Tunnel/Joker-Fields
         int jokerCount = colorless / 3;
+        boolean sixJoker = false;
         int tunnelCount = jokerCount;
+        boolean sixTunnel = false;
+        //Random used for later allocation of tunnels and jokers
+        Random random = new Random();
 
         Colorization[] colorizations = Colorization.values();
 
@@ -568,14 +571,76 @@ public class MapServiceImpl implements MapService {
                             edgeColor = selectColor(colorizations, colorMaxMap, cityColorCount);
                         }
 
-
-                        //check if there is a need of adding tunnels (color not yet used, city has not too many tunnels, edge is too short)
                         boolean toTunnel = false;
-                        if(!tunnelColorCheck.get(edgeColor) && tunnelCityMax > 0 && edgeSize >= 2)
+                        boolean toJoker = false;
+                        //tunnel checks
+                        if(edgeColor == Colorization.COLORLESS)
                         {
-                            toTunnel = true;
-                            tunnelColorCheck.put(edgeColor, true);
-                            tunnelCityMax--;
+                            //tunnel for 8 long connection
+                            if(edgeSize > 7)
+                            {
+                                toTunnel = true;
+                                tunnelCount--;
+                            }
+
+                            //tunnels and jokers for 6 long connection
+                            if(edgeSize < 8 && edgeSize > 5)
+                            {
+                                if(!sixTunnel) {
+                                    if(!sixJoker)
+                                    {
+                                        toJoker = true;
+                                        sixJoker = true;
+                                        jokerCount--;
+                                    }
+                                    else {
+                                        toTunnel = true;
+                                        sixTunnel = true;
+                                        tunnelCount--;
+                                    }
+                                } else
+                                {
+                                    if(!sixJoker)
+                                    {
+                                        toJoker = true;
+                                        sixJoker = true;
+                                        tunnelCount--;
+                                    }
+                                }
+                            }
+
+                            //tunnels and jokers for the rest of the colorless connections
+                            if(edgeSize < 5)
+                            {
+                                //random if special colorless connection
+                                if(random.nextBoolean())
+                                {
+                                    //random if joker or tunnel
+                                    if(random.nextBoolean())
+                                    {
+                                        if(jokerCount > 0)
+                                        {
+                                            toJoker = true;
+                                            jokerCount--;
+                                        }
+                                    }
+                                    else {
+                                        if(tunnelCount > 0)
+                                        {
+                                            toTunnel = true;
+                                            tunnelCount--;
+                                        }
+                                    }
+                                }
+                            }
+
+                        } else {
+                            //check if there is a need of adding colored tunnels (color not yet used, city has not too many tunnels, edge is too short or too long)
+                            if (!tunnelColorCheck.get(edgeColor) && tunnelCityMax > 0 && edgeSize >= 2 && edgeSize < 4) {
+                                toTunnel = true;
+                                tunnelColorCheck.put(edgeColor, true);
+                                tunnelCityMax--;
+                            }
                         }
 
                         //update cities "color-tracking" Map and usage of the same color in overall "tracking" Map
@@ -584,6 +649,8 @@ public class MapServiceImpl implements MapService {
                         java.util.Map<Colorization, Integer> neigborColorMap = mapPointColorCounter.get(destination);
                         int oldNeighborValue = neigborColorMap.get(edgeColor);
                         neigborColorMap.put(edgeColor, oldNeighborValue - 1);
+                        mapPointColorCounter.put(destination, neigborColorMap);
+                        mapPointColorCounter.put(origin, cityColorCount);
                         int oldMaxValue = colorMaxMap.get(edgeColor);
                         colorMaxMap.put(edgeColor, oldMaxValue - 1);
 
@@ -599,6 +666,13 @@ public class MapServiceImpl implements MapService {
 
                         MapPoint toNeighbor = origin;
 
+                        //if Joker is set only one or two fields of the connection should be jokers
+                        int jokerPointCounter = 2;
+                        if(random.nextBoolean() && edgeSize < 6)
+                        {
+                            jokerPointCounter = 1;
+                        }
+
                         //For each trainsized part of the Connection add a new "in-between" MapPoint (for later editing of connections)
                         for (int i = 0; i < edgeSize; i++) {
                             float newX = origin.getLocation().x + i * stepX;
@@ -608,6 +682,16 @@ public class MapServiceImpl implements MapService {
                             toBeSaved.setColor(edgeColor);
                             toBeSaved.setMap(map);
                             toBeSaved.setHasTunnel(toTunnel);
+                            if(jokerPointCounter > 0)
+                            {
+                                jokerPointCounter--;
+                            }
+                            else
+                            {
+                                toJoker = false;
+                            }
+                            toBeSaved.setHasJoker(toJoker);
+
                             toBeSaved.setLocation(new Point2D.Float(newX, newY));
                             Set<MapPoint> toBeSavedNeighbors = new HashSet<>();
 
@@ -632,6 +716,7 @@ public class MapServiceImpl implements MapService {
                             MapPoint toBeSaved = new MapPoint();
                             toBeSaved.setColor(edgeColor);
                             toBeSaved.setHasTunnel(toTunnel);
+                            toBeSaved.setHasJoker(toJoker);
                             toBeSaved.setMap(map);
                             toBeSaved.setLocation(destination.getLocation());
                             Set<MapPoint> toBeSavedNeighbors = new HashSet<>();
