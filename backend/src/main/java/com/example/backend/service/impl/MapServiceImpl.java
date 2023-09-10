@@ -292,11 +292,14 @@ public class MapServiceImpl implements MapService {
       Point2D.Float sw = map.getSouthWestBoundary();
       Point2D.Float ne = map.getNorthEastBoundary();
 
+      //trainsize is ~26.5mm, A0 is ~1189mm long
       float trainsize = (Math.abs(ne.x - sw.x)) * 26.5f / 1189;
+      //define a diameter, because cities have a circle around them ~10mm
+      float cityDiameter = (Math.abs(ne.x - sw.x)) * 10.0f / 1189;
 
-      float eight = trainsize * 8;
-      float six = trainsize * 6;
-      float five = trainsize * 5;
+      float eight = trainsize * 8 + cityDiameter;
+      float six = trainsize * 6 + cityDiameter;
+      float five = trainsize * 5 + cityDiameter;
 
       //remove connections with greater equal length then eight and leave 1 of eight
       //then remove all of 7 and all of 6 except 2
@@ -475,7 +478,10 @@ public class MapServiceImpl implements MapService {
         Point2D.Float sw = map.getSouthWestBoundary();
         Point2D.Float ne = map.getNorthEastBoundary();
 
+        //trainsize is ~26.5mm, A0 is ~1189mm long
         float trainsize = (Math.abs(ne.x - sw.x)) * 26.5f / 1189;
+        //define a diameter, because cities have a circle around them ~10mm
+        float cityDiameter = (Math.abs(ne.x - sw.x)) * 10.0f / 1189;
 
         float eight = trainsize * 8;
         float six = trainsize * 6;
@@ -655,16 +661,46 @@ public class MapServiceImpl implements MapService {
                         colorMaxMap.put(edgeColor, oldMaxValue - 1);
 
 
-
-                        //split the edge into train-sized parts, therefore calculate deltas and step-sizes
+                        //split the edge into train-sized parts, therefore calculate deltas
                         float deltaX = destination.getLocation().x - origin.getLocation().x;
                         float deltaY = destination.getLocation().y - origin.getLocation().y;
                         float distanceBetween = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-                        float stepX = deltaX * trainsize / distanceBetween;
-                        float stepY = deltaY * trainsize / distanceBetween;
+                        //use the cityDiameter to calculate a padding for the partition of train connection
+                        float padding = cityDiameter / 2 * -1;
 
-                        MapPoint toNeighbor = origin;
+                        // Calculate the padding values for X and Y
+                        float paddingX = padding * deltaX / distanceBetween;
+                        float paddingY = padding * deltaY / distanceBetween;
+
+                        //The padded Start and Endpoints have to be saved
+                        Point2D.Float paddedStart = new Point2D.Float(origin.getLocation().x - paddingX, origin.getLocation().y - paddingY);
+                        Point2D.Float paddedEnd = new Point2D.Float(destination.getLocation().x + paddingX, destination.getLocation().y + paddingY);
+
+                        MapPoint paddedStartPoint = new MapPoint();
+                        paddedStartPoint.setColor(edgeColor);
+                        paddedStartPoint.setMap(map);
+                        paddedStartPoint.setHasTunnel(toTunnel);
+                        paddedStartPoint.setHasJoker(toJoker);
+                        paddedStartPoint.setLocation(paddedStart);
+                        paddedStartPoint.setNeighbors(new HashSet<>());
+
+                        MapPoint paddedEndPoint = new MapPoint();
+                        paddedEndPoint.setColor(edgeColor);
+                        paddedEndPoint.setMap(map);
+                        paddedEndPoint.setHasTunnel(toTunnel);
+                        paddedEndPoint.setLocation(paddedEnd);
+                        paddedEndPoint.setNeighbors(new HashSet<>());
+
+                        this.mapPointRepository.save(paddedStartPoint);
+                        this.mapPointRepository.save(paddedEndPoint);
+
+                        //calculate the interpolation step sizes based on the padded start and end points
+                        float stepX = (paddedEnd.x - paddedStart.x) / edgeSize;
+                        float stepY = (paddedEnd.y - paddedStart.y) / edgeSize;
+
+                        //initial point set to padded start
+                        MapPoint toNeighbor = paddedStartPoint;
 
                         //if Joker is set only one or two fields of the connection should be jokers
                         int jokerPointCounter = 2;
@@ -674,9 +710,9 @@ public class MapServiceImpl implements MapService {
                         }
 
                         //For each trainsized part of the Connection add a new "in-between" MapPoint (for later editing of connections)
-                        for (int i = 0; i < edgeSize; i++) {
-                            float newX = origin.getLocation().x + i * stepX;
-                            float newY = origin.getLocation().y + i * stepY;
+                        for (int i = 0; i < edgeSize-1; i++) {
+                            float newX = paddedStart.x + i * stepX;
+                            float newY = paddedStart.y + i * stepY;
 
                             MapPoint toBeSaved = new MapPoint();
                             toBeSaved.setColor(edgeColor);
@@ -708,6 +744,7 @@ public class MapServiceImpl implements MapService {
                             toNeighbor = toBeSaved;
                         }
 
+                        /*
                         //final MapPoint has to be added to destination as a neighbor and vice versa
                         //special case: cities too close together to make "in-between" MapPoints, but color still has to be saved somewhere
                         //therefore we need a new MapPoint at same location as destination with color-information
@@ -739,10 +776,42 @@ public class MapServiceImpl implements MapService {
                             toNeighbor.setNeighbors(oldNeigbors);
                             destination.setNeighbors(toBeAddedToDestination);
                             this.mapPointRepository.save(destination);
-                        }
+                        } */
 
+                        //save last in-between MapPoint to paddedEndPoint
+                        Set<MapPoint> toBeAddedToPaddedEndPoint = paddedEndPoint.getNeighbors();
+                        Set<MapPoint> oldNeigbors = toNeighbor.getNeighbors();
 
+                        oldNeigbors.add(paddedEndPoint);
+                        toBeAddedToPaddedEndPoint.add(toNeighbor);
+                        toNeighbor.setNeighbors(oldNeigbors);
+                        paddedEndPoint.setNeighbors(toBeAddedToPaddedEndPoint);
+
+                        this.mapPointRepository.save(paddedEndPoint);
                         this.mapPointRepository.save(toNeighbor);
+
+                        //connect padded points to destination and origin cities
+                        Set<MapPoint> originNeigbors = origin.getNeighbors();
+                        Set<MapPoint> destinationNeigbors = destination.getNeighbors();
+                        Set<MapPoint> paddedEndPointNeighbors = paddedEndPoint.getNeighbors();
+                        Set<MapPoint> paddedStartPointNeighbors = paddedStartPoint.getNeighbors();
+
+                        originNeigbors.add(paddedStartPoint);
+                        paddedStartPointNeighbors.add(origin);
+                        destinationNeigbors.add(paddedEndPoint);
+                        paddedEndPointNeighbors.add(destination);
+
+                        origin.setNeighbors(originNeigbors);
+                        paddedStartPoint.setNeighbors(paddedStartPointNeighbors);
+                        destination.setNeighbors(destinationNeigbors);
+                        paddedEndPoint.setNeighbors(paddedEndPointNeighbors);
+
+                        this.mapPointRepository.save(origin);
+                        this.mapPointRepository.save(destination);
+                        this.mapPointRepository.save(paddedStartPoint);
+                        this.mapPointRepository.save(paddedEndPoint);
+
+
 
                     }
                 }

@@ -163,24 +163,29 @@ export class ColoredMapComponent implements OnInit {
                 default:
                   break;
               }
+              if (colorization !== Colorization.CITY) {
+                const lineWeight = 10;
 
-              const lineWeight = 10;
-
-              if(destMp !== undefined) {
-                if (destMp.hasTunnel) {
-                  this.layers.push(polyline(LatLngs, {color: '#000', interactive: false, weight: lineWeight + 2}));
+                if (destMp !== undefined) {
+                  if (destMp.hasTunnel) {
+                    this.layers.push(polyline(LatLngs, {color: '#000', interactive: false, weight: lineWeight + 2}));
+                  }
                 }
-              }
-              this.layers.push(polyline(LatLngs, {color: color, interactive: false, weight:lineWeight,}));
-              if(destMp !== undefined) {
-                if (destMp.hasJoker || mp.hasJoker) {
-                  this.layers.push(polyline(LatLngs, {color: '#000', interactive: false, weight: lineWeight / 2}));
+                this.layers.push(polyline(LatLngs, {color: color, interactive: false, weight: lineWeight,}));
+                if (destMp !== undefined) {
+                  if (destMp.hasJoker || mp.hasJoker) {
+                    this.layers.push(polyline(LatLngs, {color: '#000', interactive: false, weight: lineWeight / 2}));
+                  }
                 }
               }
             }
           });
         const circleLatLng = new LatLng(mp.location.y, mp.location.x);
-        this.layers.push(circle(circleLatLng, 0,{color: '#ff0000'}));
+        if(mp.color !== Colorization.CITY) {
+          this.layers.push(circle(circleLatLng, 0, {color: '#ff0000'}));
+        }else {
+          this.layers.push(circle(circleLatLng, 4500, {color: '#000000', fillOpacity: 100, fill: true, fillColor: '#92999f'}));
+        }
         mp.isDrawn = true;
         this.mappedMPs.set(mp.id, mp);
       });
