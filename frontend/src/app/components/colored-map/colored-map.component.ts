@@ -184,7 +184,9 @@ export class ColoredMapComponent implements OnInit {
         if(mp.color !== Colorization.CITY) {
           this.layers.push(circle(circleLatLng, 0, {color: '#ff0000'}));
         }else {
-          this.layers.push(circle(circleLatLng, 4500, {color: '#000000', fillOpacity: 100, fill: true, fillColor: '#92999f'}));
+          const radius = (Math.abs(this.savedMap.northEastBoundary.x - this.savedMap.southWestBoundary.x)) * 10 / 1189;
+          console.log(radius);
+          this.layers.push(circle(circleLatLng, radius*1000, {color: '#000000', fillOpacity: 100, fill: true, fillColor: '#92999f'}));
         }
         mp.isDrawn = true;
         this.mappedMPs.set(mp.id, mp);

@@ -198,6 +198,15 @@ public class MapServiceImpl implements MapService {
     Graph<MapPoint, DefaultWeightedEdge> graph
         = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
 
+    if(save)
+    {
+        if(!mapPointRepository.findMapPointsByMapId(map.getId()).isEmpty())
+        {
+            List<MapPoint> oldPoints = mapPointRepository.findMapPointsByMapId(map.getId());
+            mapPointRepository.deleteAll(oldPoints);
+        }
+    }
+
     for (CityDto c:
          cityDtos) {
       MapPoint newPoint = new MapPoint();
@@ -566,6 +575,9 @@ public class MapServiceImpl implements MapService {
 
                     if (!coloredCities.contains(destination.getId()) && !coloredCities.contains(origin.getId())) {
 
+                        //neighboring city may has already used colors
+                        java.util.Map<Colorization, Integer> neighborColorCount = mapPointColorCounter.get(destination);
+
                         double edgeLength = graph.getEdgeWeight(e);
 
                         double edgeDivision = edgeLength / trainsize;
@@ -574,7 +586,7 @@ public class MapServiceImpl implements MapService {
                         //if edge is longer or equal six it has to be colorless
                         Colorization edgeColor = Colorization.COLORLESS;
                         if(edgeSize < 6) {
-                            edgeColor = selectColor(colorizations, colorMaxMap, cityColorCount);
+                            edgeColor = selectColor(colorizations, colorMaxMap, cityColorCount, neighborColorCount);
                         }
 
                         boolean toTunnel = false;
@@ -616,7 +628,7 @@ public class MapServiceImpl implements MapService {
                             }
 
                             //tunnels and jokers for the rest of the colorless connections
-                            if(edgeSize < 5)
+                            if(edgeSize < 5 && edgeSize > 1)
                             {
                                 //random if special colorless connection
                                 if(random.nextBoolean())
@@ -744,39 +756,6 @@ public class MapServiceImpl implements MapService {
                             toNeighbor = toBeSaved;
                         }
 
-                        /*
-                        //final MapPoint has to be added to destination as a neighbor and vice versa
-                        //special case: cities too close together to make "in-between" MapPoints, but color still has to be saved somewhere
-                        //therefore we need a new MapPoint at same location as destination with color-information
-                        if(toNeighbor == origin)
-                        {
-                            MapPoint toBeSaved = new MapPoint();
-                            toBeSaved.setColor(edgeColor);
-                            toBeSaved.setHasTunnel(toTunnel);
-                            toBeSaved.setHasJoker(toJoker);
-                            toBeSaved.setMap(map);
-                            toBeSaved.setLocation(destination.getLocation());
-                            Set<MapPoint> toBeSavedNeighbors = new HashSet<>();
-
-                            Set<MapPoint> oldNeighbors = toNeighbor.getNeighbors();
-
-                            oldNeighbors.add(toBeSaved);
-                            toBeSavedNeighbors.add(toNeighbor);
-                            toBeSaved.setNeighbors(toBeSavedNeighbors);
-                            toNeighbor.setNeighbors(oldNeighbors);
-
-                            this.mapPointRepository.save(toBeSaved);
-                        }
-                        else {
-                            Set<MapPoint> toBeAddedToDestination = destination.getNeighbors();
-                            Set<MapPoint> oldNeigbors = toNeighbor.getNeighbors();
-
-                            oldNeigbors.add(destination);
-                            toBeAddedToDestination.add(toNeighbor);
-                            toNeighbor.setNeighbors(oldNeigbors);
-                            destination.setNeighbors(toBeAddedToDestination);
-                            this.mapPointRepository.save(destination);
-                        } */
 
                         //save last in-between MapPoint to paddedEndPoint
                         Set<MapPoint> toBeAddedToPaddedEndPoint = paddedEndPoint.getNeighbors();
@@ -836,11 +815,11 @@ public class MapServiceImpl implements MapService {
         return this.mapPointMapper.mapPointListToMapPointDtoListCustom(this.mapPointRepository.findMapPointsByMapId(id));
     }
     
-    private Colorization selectColor(Colorization[] colorizations, java.util.Map<Colorization, Integer> colorMaxMap, java.util.Map<Colorization, Integer> cityColorCount) {
+    private Colorization selectColor(Colorization[] colorizations, java.util.Map<Colorization, Integer> colorMaxMap, java.util.Map<Colorization, Integer> cityColorCount, java.util.Map<Colorization,Integer> neighborColorCount) {
         List<Colorization> availableColors = new ArrayList<>(Arrays.stream(colorizations).toList());
 
 
-        availableColors.removeIf(color -> cityColorCount.get(color) < 1 || colorMaxMap.get(color) < 1);
+        availableColors.removeIf(color -> cityColorCount.get(color) < 1 || colorMaxMap.get(color) < 1 || neighborColorCount.get(color) < 1);
 
         if(availableColors.isEmpty())
         {

@@ -1,4 +1,3 @@
-# Ticket-To-Ride-Generator
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a name="readme-top"></a>
 <!--
@@ -24,7 +23,7 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
+
 
 
 
@@ -85,8 +84,6 @@
 ## About The Project
 
 [![Product Name Screen Shot][product-screenshot]](https://example.com)
-
-Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `binapple`, `Ticket-To-Ride-Generator`, `twitter_handle`, `linkedin_username`, `student.tuwien.ac.at`, `e11730471`, `Ticket-To-Ride-Generator`, `project_description`
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -253,7 +250,7 @@ Project Link: [https://github.com/binapple/Ticket-To-Ride-Generator](https://git
 [issues-shield]: https://img.shields.io/github/issues/binapple/Ticket-To-Ride-Generator.svg?style=for-the-badge
 [issues-url]: https://github.com/binapple/Ticket-To-Ride-Generator/issues
 [license-shield]: https://img.shields.io/github/license/binapple/Ticket-To-Ride-Generator.svg?style=for-the-badge
-[license-url]: https://github.com/binapple/Ticket-To-Ride-Generator/blob/master/LICENSE.txt
+[license-url]: https://github.com/binapple/Ticket-To-Ride-Generator/blob/main/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/linkedin_username
 [product-screenshot]: images/screenshot.png
