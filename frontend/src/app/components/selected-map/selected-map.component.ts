@@ -1,20 +1,12 @@
 import {Component, NgZone, OnInit} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {
-  Circle,
-  circle,
-  LatLng,
-  latLng,
-  Map as map, polyline,
-  tileLayer,
-} from "leaflet";
+import {Circle, circle, LatLng, latLng, Map as map, polyline, tileLayer,} from "leaflet";
 import {MapService} from "../../services/map.service";
 import {MapDto} from '../../dtos/map';
 import {Point2D} from "../../dtos/point2d";
 import {City} from "../../dtos/city";
 import {MapPoint} from "../../dtos/map-point";
-
-
+import {Colorization} from "../../dtos/colorization";
 
 
 @Component({
@@ -113,16 +105,47 @@ export class SelectedMapComponent implements OnInit{
 
   loadCities() {
     if (this.savedMap.id != null) {
-      this.mapService.getCities(this.savedMap.id).subscribe({
-        next: data => {
-          this.cities = data;
-          this.selectedCities = this.cities.slice(0, 50);
-          this.cities = this.cities.slice(50, this.cities.length + 1);
-          this.addCitiesToMap();
-          this.loadMapPoints();
-          this.citiesLoaded = true;
+
+      this.mapService.getMapPoints(this.savedMap.id).subscribe(
+        {
+          next: mpData => {
+            this.mapPoints = mpData;
+
+              this.mapService.getCities(this.savedMap.id).subscribe({
+                next: data => {
+                  this.cities = data;
+                  if(this.mapPoints.length === 0) {
+                    this.selectedCities = this.cities.slice(0, 50);
+                    this.cities = this.cities.slice(50, this.cities.length + 1);
+                  }
+                  else
+                  {
+                    this.mapPoints.forEach(mp => {
+                      if(mp.color === Colorization.CITY) {
+                        const selectedCity = this.cities.find(city=>city.name == mp.name);
+                        if(selectedCity !== undefined)
+                        {
+                          this.selectedCities.push(selectedCity);
+                          const index = this.cities.indexOf(selectedCity);
+                          if (index > -1) {
+                            this.cities.splice(index, 1);
+                          }
+                        }
+                      }
+                    })
+                  }
+                  this.addCitiesToMap();
+                  this.loadMapPoints();
+                  this.citiesLoaded = true;
+                }
+              });
+
+
+          }
         }
-      })
+      );
+
+
     }
   }
 
@@ -256,7 +279,7 @@ export class SelectedMapComponent implements OnInit{
               mp.isDrawn = true;
 
             })
-
+            console.log(this.layers);
           }
         }
       )

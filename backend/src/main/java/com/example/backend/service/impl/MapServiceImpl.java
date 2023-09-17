@@ -198,6 +198,7 @@ public class MapServiceImpl implements MapService {
     Graph<MapPoint, DefaultWeightedEdge> graph
         = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
 
+    //if there are old MapPoints saved to the map, they are reset when choosing new cities with save mode
     if(save)
     {
         if(!mapPointRepository.findMapPointsByMapId(map.getId()).isEmpty())
@@ -207,6 +208,7 @@ public class MapServiceImpl implements MapService {
         }
     }
 
+    //initializing the city-MapPoints
     for (CityDto c:
          cityDtos) {
       MapPoint newPoint = new MapPoint();
@@ -228,7 +230,7 @@ public class MapServiceImpl implements MapService {
     }
 
 
-
+    //Create a complete graph connecting all cities with each other
     CompleteGraphGenerator<MapPoint, DefaultWeightedEdge> completeGraphGenerator
         = new CompleteGraphGenerator<>();
 
@@ -238,6 +240,7 @@ public class MapServiceImpl implements MapService {
 
     Set<DefaultWeightedEdge> edges = graph.edgeSet();
 
+    //setting weights equal to distance between cities
     for (DefaultWeightedEdge e: edges
          ) {
       MapPoint source = graph.getEdgeSource(e);
@@ -246,10 +249,11 @@ public class MapServiceImpl implements MapService {
       graph.setEdgeWeight(e,weight);
     }
 
+    //reduce the edges in graph to get a playable result
     reduceEdges(graph,map);
 
 
-
+    //result of edge reduction needs to be saved: Neigbors are MapPoints that are connected by edges
       for (MapPoint p: graph.vertexSet()
            ) {
           Set<MapPoint> pNeighbors = new HashSet<>();
@@ -273,6 +277,7 @@ public class MapServiceImpl implements MapService {
 
       Set<MapPoint> mapPointsWithNeighbors = graph.vertexSet();
 
+      //when using save mode the MapPoints are stored in the database, else it is only used as preview
       if(save)
       {
           this.mapPointRepository.saveAll(mapPointsWithNeighbors);
@@ -289,7 +294,7 @@ public class MapServiceImpl implements MapService {
 
       List<DefaultWeightedEdge> edgeList = new ArrayList<>(edges);
 
-
+      //comparator used for sorting by edge weight
       Comparator<DefaultWeightedEdge> comp = (o1, o2) -> {
           double first = graph.getEdgeWeight(o1);
           double second = graph.getEdgeWeight(o2);
@@ -298,6 +303,7 @@ public class MapServiceImpl implements MapService {
 
       edgeList.sort(comp);
 
+      //used for calculation of trainsizes and city diameters
       Point2D.Float sw = map.getSouthWestBoundary();
       Point2D.Float ne = map.getNorthEastBoundary();
 
@@ -313,6 +319,7 @@ public class MapServiceImpl implements MapService {
       //remove connections with greater equal length then eight and leave 1 of eight
       //then remove all of 7 and all of 6 except 2
       //then remove all of 5 (keep ones that are between 4 and 5 as connections are not lines that always start on the city itself)
+      //for performance reasons binary search is used to have a faster deletion of unnecessary edges
       float tooBigSize = eight * 2;
       while (tooBigSize >= five) {
 
@@ -365,6 +372,7 @@ public class MapServiceImpl implements MapService {
               startIndex = startIndex + 3;
           }
 
+          //set the List of Edges that are to be removed from the graph
           List<DefaultWeightedEdge> toRemove;
           if (index < 0) {
               index = 0;
@@ -375,6 +383,8 @@ public class MapServiceImpl implements MapService {
           }
           graph.removeAllEdges(toRemove);
 
+          //if removing the previous list has led to connection issues, the list itself is checked one by one
+          //to find out the edges that are causing the issue and set a boolean to show the issue in the frontend
           if (GraphTests.isConnected(graph)) {
               edgeList = edgeList.subList(index, edgeList.size());
               tooBigSize = tooBigSize - trainsize;
@@ -386,7 +396,7 @@ public class MapServiceImpl implements MapService {
 
       }
 
-
+      //get updated edge List after reduction of edges
       edgeList = edges.stream().toList();
 
       //Check if connections are intersecting each other
@@ -404,11 +414,14 @@ public class MapServiceImpl implements MapService {
 
               if (edgeLine.intersectsLine(interLine)) {
 
-
+                  //We do not want to delete the connection itself (because it is of course intersecting itself)
                   if (source.getLocation() != interSource.getLocation() && source.getLocation() != interTarget.getLocation()) {
                       if (target.getLocation() != interSource.getLocation() && target.getLocation() != interTarget.getLocation()) {
                               double weightEdge = graph.getEdgeWeight(e);
                               double weightInter = graph.getEdgeWeight(intersect);
+
+                              //this step is used to keep the 8 and 6 long connections
+                              //otherwise the algorithm prefers shorter connections to keep the grid cleaner
                               if (weightEdge > weightInter) {
                                   if(weightEdge > six)
                                   {
