@@ -1,11 +1,14 @@
-import {Component, OnInit} from '@angular/core';
-import {MapPoint} from "../../dtos/map-point";
-import {circle, LatLng, latLng, polyline, tileLayer} from "leaflet";
+import {Component, NgZone, OnInit} from '@angular/core';
+import {MapPointDto} from "../../dtos/map-point";
+import {Circle, circle, LatLng, latLng, polyline, tileLayer} from "leaflet";
 import {ActivatedRoute, Router} from "@angular/router";
 import {Point2D} from "../../dtos/point2d";
 import {MapDto} from "../../dtos/map";
 import {MapService} from "../../services/map.service";
 import {Colorization} from "../../dtos/colorization";
+import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
+import {MapPointEditModalComponent} from "./map-point-edit-modal/map-point-edit-modal.component";
+import {MapPointService} from "../../services/map-point.service";
 
 @Component({
   selector: 'app-colored-map',
@@ -14,7 +17,7 @@ import {Colorization} from "../../dtos/colorization";
 })
 export class ColoredMapComponent implements OnInit {
 
-  mapPoints: MapPoint[] = [];
+  mapPoints: MapPointDto[] = [];
 
   //minimal map options
   optionsSpec: any = {
@@ -45,12 +48,15 @@ export class ColoredMapComponent implements OnInit {
     circle([46.95, -122], {radius: 0}),
     polyline([[0, 0]]),
   ];
-  mappedMPs = new Map<number, MapPoint>();
+  mappedMPs = new Map<number, MapPointDto>();
 
 
   constructor(private route: ActivatedRoute,
               private mapService: MapService,
-              private router: Router) {
+              private mapPointService: MapPointService,
+              private router: Router,
+              private zone: NgZone,
+              private  modalService: NgbModal) {
   }
 
   ngOnInit() {
@@ -100,9 +106,6 @@ export class ColoredMapComponent implements OnInit {
 
   drawMapPoints() {
 
-    console.log(this.savedMap);
-    console.log(this.mapPoints);
-    console.log(this.layers);
     this.layers = [];
 
     if (this.savedMap.id != null) {
@@ -183,15 +186,25 @@ export class ColoredMapComponent implements OnInit {
         const circleLatLng = new LatLng(mp.location.y, mp.location.x);
         if(mp.color !== Colorization.CITY) {
           this.layers.push(circle(circleLatLng, 0, {color: '#ff0000'}));
+
+          const newCircle = circle(circleLatLng,0, {color:'#d94e4e'}).on("dblclick",
+
+            e => {
+              this.zone.run(() => this.circleClick(e.target ,mp.id));
+            }
+
+          );
+
+          this.layers.push(newCircle);
+
+
         }else {
           const radius = (Math.abs(this.savedMap.northEastBoundary.x - this.savedMap.southWestBoundary.x)) * 10 / 1189;
-          console.log(radius);
           this.layers.push(circle(circleLatLng, radius*1000, {color: '#000000', fillOpacity: 100, fill: true, fillColor: '#92999f'}));
         }
         mp.isDrawn = true;
         this.mappedMPs.set(mp.id, mp);
       });
-        console.log(this.layers);
     }
   }
 
@@ -206,5 +219,25 @@ export class ColoredMapComponent implements OnInit {
 
   backButton() {
     this.router.navigate(['map/']);
+  }
+
+  circleClick(circle: Circle, id: number) {
+
+    this.mapPointService.getMapPoint(id).subscribe({
+      next: data => {
+        const modal = this.modalService.open(MapPointEditModalComponent)
+        modal.componentInstance.mapPoint = data;
+        modal.closed.subscribe(
+          (edited: boolean) => {
+            if(edited) {
+              this.getMapPoints(this.savedMap.id);
+            }
+          }
+        );
+
+
+      }
+    });
+
   }
 }

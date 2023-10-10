@@ -5,7 +5,7 @@ import {MapService} from "../../services/map.service";
 import {MapDto} from '../../dtos/map';
 import {Point2D} from "../../dtos/point2d";
 import {City} from "../../dtos/city";
-import {MapPoint} from "../../dtos/map-point";
+import {MapPointDto} from "../../dtos/map-point";
 import {Colorization} from "../../dtos/colorization";
 
 
@@ -44,8 +44,8 @@ export class SelectedMapComponent implements OnInit{
   mapLoaded = false;
   cities: City[] = [];
   selectedCities: City[] = [];
-  mapPoints: MapPoint[] = [];
-  mappedMPs = new Map<number,MapPoint>();
+  mapPoints: MapPointDto[] = [];
+  mappedMPs = new Map<number,MapPointDto>();
   layers = [
     circle([ 46.95, -122 ], { radius: 0 }),
     polyline([[0,0]]),

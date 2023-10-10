@@ -17,7 +17,7 @@ public interface MapMapper {
   Map createMapDtoToMap(CreateMapDto createMapDto);
 
   /**
-   * Maps a map entitiy to a CreateMapDto.
+   * Maps a map entity to a CreateMapDto.
    *
    * @param map map entity to be mapped to dto
    * @return representation of map as dto

@@ -1,0 +1,42 @@
+<div class="modal-header">
+  <h4 class="modal-title">Edit MapPoint</h4>
+  <button type="button" class="close" aria-label="Close" (click)="closeModal()">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<div class="modal-body">
+  <form (ngSubmit)="saveChanges()">
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input type="text" class="form-control" id="name" name="name" [(ngModel)]="mapPoint.name">
+    </div>
+    <div class="form-group">
+      <label for="locationY">Location (Latitude, Longitude)</label>
+      <div class="input-group">
+      <input type="text" class="form-control" id="locationY" name="locationY" [(ngModel)]="mapPoint.location.y">
+      <input type="text" class="form-control" id="locationX" name="locationX" [(ngModel)]="mapPoint.location.x">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="colorization">Colorization</label>
+      <select class="form-control" id="colorization" name="colorization" [(ngModel)]="mapPoint.color" *ngIf="mapPoint.color !== Colorization.CITY">
+        <option *ngFor="let color of availableColors" [value]="color.value" [disabled]="color.disabled">{{ color.label }}</option>
+      </select>
+      <select class="form-control" id="colorization2" name="colorization" [(ngModel)]="mapPoint.color" *ngIf="mapPoint.color === Colorization.CITY" disabled>
+        <option value="CITY">CITY</option>
+      </select>
+    </div>
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="mPJoker" name="mPJoker" [(ngModel)]="mapPoint.hasJoker">
+      <label class="form-check-label" for="mPJoker">Joker Field</label>
+    </div>
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="mPTunnel" name="mPTunnel" [(ngModel)]="mapPoint.hasTunnel">
+      <label class="form-check-label" for="mPTunnel">Tunnel Connection</label>
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+  <button type="submit" class="btn btn-primary" (click)="saveChanges()">Save</button>
+</div>

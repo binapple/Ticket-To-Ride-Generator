@@ -12,6 +12,32 @@ import java.util.List;
 public interface MapPointMapper {
 
     /**
+     * Maps a MapPoint entity to a MapPointDto.
+     *
+     * @param mapPoint MapPoint entity to be mapped to dto
+     * @return representation of MapPoint as dto
+     */
+     default MapPointDto mapPointToMapPointDto(MapPoint mapPoint){
+         
+         
+         MapPointDto toReturn = new MapPointDto();
+         toReturn.setConnectionIssue(mapPoint.isConnectionIssue());
+         toReturn.setHasTunnel(mapPoint.isHasTunnel());
+         toReturn.setHasJoker(mapPoint.isHasJoker());
+         toReturn.setId(mapPoint.getId());
+         toReturn.setLocation(mapPoint.getLocation());
+         toReturn.setName(mapPoint.getName());
+         toReturn.setColor(mapPoint.getColor());
+         List<Long> neighborIds = new ArrayList<>();
+         for (MapPoint n: mapPoint.getNeighbors()
+         ) {
+             neighborIds.add(n.getId());
+         }
+         toReturn.setNeighbors(neighborIds);
+         return toReturn;
+     }
+
+    /**
      * Maps a list of MapPoints to a list of MapPointDtos.
      *
      * @param mapPoints a list of MapPoints to map

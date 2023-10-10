@@ -1,7 +1,7 @@
 import {Point2D} from "./point2d";
 import {Colorization} from "./colorization";
 
-export class MapPoint {
+export class MapPointDto {
   id: number;
   name: string;
   location: Point2D;

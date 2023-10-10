@@ -3,7 +3,7 @@ import {HttpClient} from "@angular/common/http";
 import {MapDto} from '../dtos/map';
 import {Observable} from "rxjs";
 import {City} from "../dtos/city";
-import {MapPoint} from "../dtos/map-point";
+import {MapPointDto} from "../dtos/map-point";
 
 @Injectable({
   providedIn: 'root'
@@ -68,8 +68,8 @@ export class MapService {
    *
    * @returns a list of mapPoints
    */
-  showMapPoints(id: number, cities: City[]): Observable<MapPoint[]> {
-    return this.httpClient.post<MapPoint[]>(this.baseURI + '/maps/selection/' + id, cities);
+  showMapPoints(id: number, cities: City[]): Observable<MapPointDto[]> {
+    return this.httpClient.post<MapPointDto[]>(this.baseURI + '/maps/selection/' + id, cities);
   }
 
   /**
@@ -80,8 +80,8 @@ export class MapService {
    *
    * @returns a list of mapPoints
    */
-  colorizeMapPoints(id: number, cities: City[]): Observable<MapPoint[]> {
-    return this.httpClient.post<MapPoint[]>(this.baseURI + '/maps/colorization/' + id, cities);
+  colorizeMapPoints(id: number, cities: City[]): Observable<MapPointDto[]> {
+    return this.httpClient.post<MapPointDto[]>(this.baseURI + '/maps/colorization/' + id, cities);
   }
 
   /**
@@ -91,7 +91,7 @@ export class MapService {
    *
    * @returns a list of mapPoints corresponding to the map
    */
-  getMapPoints(id: number): Observable<MapPoint[]> {
-    return this.httpClient.get<MapPoint[]>(this.baseURI + '/maps/mapPoints/' + id);
+  getMapPoints(id: number): Observable<MapPointDto[]> {
+    return this.httpClient.get<MapPointDto[]>(this.baseURI + '/maps/mapPoints/' + id);
   }
 }
