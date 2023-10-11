@@ -1,6 +1,8 @@
 package com.example.backend.endpoint;
 
 
+import java.util.List;
+
 import com.example.backend.endpoint.dto.MapPointDto;
 import com.example.backend.service.MapPointService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,4 +40,12 @@ public class MapPointEndpoint {
   {
     return mapPointService.update(mapPointDto);
   }
+
+  @PutMapping(value = "")
+  @CrossOrigin(origins = "http://localhost:4200")
+  @ResponseStatus(HttpStatus.OK)
+  public List<MapPointDto> addConnection(@RequestBody List<MapPointDto> cityMapPoints) {
+    return mapPointService.addConnection(cityMapPoints);
+  }
+
 }

@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import java.awt.geom.Point2D;
+import java.util.List;
 
 import com.example.backend.endpoint.dto.MapPointDto;
 
@@ -31,4 +32,12 @@ public interface MapPointService {
    */
   MapPointDto update(MapPointDto mapPointDto);
 
+  /**
+   * Creates a new Connection and thus new MapPoints between two existing city MapPoints
+   * New Connections are always colorless and have no tunnels or jokers
+   *
+   * @param cityMapPoints List of CityMapPoints
+   * @return a List of all newly created MapPoints
+   */
+  List<MapPointDto> addConnection(List<MapPointDto> cityMapPoints);
 }

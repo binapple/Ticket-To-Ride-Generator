@@ -46,6 +46,17 @@ public class MapServiceImpl implements MapService {
   private final MapPointMapper mapPointMapper;
   private final MapPointRepository mapPointRepository;
 
+  //this variable is used to change the length of the resulting game plan (now it is set to DIN A0)
+  public static final int FORMATLENGTH = 1189;
+
+  //this variable is the real size equivalent of a train from Ticket-To-Ride in millimeters
+  public static final float TRAINLENGTH = 26.5f;
+
+  //this variable is the real size equivalent of a cities diameter from Ticket-To-Ride in millimeters
+  public static final float CITYDIAMETER = 10.0f;
+
+
+
   @Autowired
   public MapServiceImpl(MapMapper mapMapper, MapRepository mapRepository, CityMapper cityMapper, CityRepository cityRepository, MapPointMapper mapPointMapper, MapPointRepository mapPointRepository) {
     this.mapMapper = mapMapper;
@@ -307,10 +318,10 @@ public class MapServiceImpl implements MapService {
       Point2D.Float sw = map.getSouthWestBoundary();
       Point2D.Float ne = map.getNorthEastBoundary();
 
-      //trainsize is ~26.5mm, A0 is ~1189mm long
-      float trainsize = (Math.abs(ne.x - sw.x)) * 26.5f / 1189;
-      //define a diameter, because cities have a circle around them ~10mm
-      float cityDiameter = (Math.abs(ne.x - sw.x)) * 10.0f / 1189;
+      //trainsize calculated off the set values
+      float trainsize = (Math.abs(ne.x - sw.x)) * TRAINLENGTH / FORMATLENGTH;
+      //define a diameter, because cities have a circle around them
+      float cityDiameter = (Math.abs(ne.x - sw.x)) * CITYDIAMETER / FORMATLENGTH;
 
       float eight = trainsize * 8 + cityDiameter;
       float six = trainsize * 6 + cityDiameter;
@@ -496,14 +507,13 @@ public class MapServiceImpl implements MapService {
 
         Map map = this.mapRepository.getReferenceById(id);
 
-        //used for colorization of longer connections
         Point2D.Float sw = map.getSouthWestBoundary();
         Point2D.Float ne = map.getNorthEastBoundary();
 
-        //trainsize is ~26.5mm, A0 is ~1189mm long
-        float trainsize = (Math.abs(ne.x - sw.x)) * 26.5f / 1189;
-        //define a diameter, because cities have a circle around them ~10mm
-        float cityDiameter = (Math.abs(ne.x - sw.x)) * 10.0f / 1189;
+        //trainsize calculated off the set values
+        float trainsize = (Math.abs(ne.x - sw.x)) * TRAINLENGTH / FORMATLENGTH;
+        //define a diameter, because cities have a circle around them
+        float cityDiameter = (Math.abs(ne.x - sw.x)) * CITYDIAMETER / FORMATLENGTH;
 
         float eight = trainsize * 8;
         float six = trainsize * 6;
@@ -588,7 +598,7 @@ public class MapServiceImpl implements MapService {
 
                     if (!coloredCities.contains(destination.getId()) && !coloredCities.contains(origin.getId())) {
 
-                        //neighboring city may has already used colors
+                        //neighboring city may have already used colors
                         java.util.Map<Colorization, Integer> neighborColorCount = mapPointColorCounter.get(destination);
 
                         double edgeLength = graph.getEdgeWeight(e);
