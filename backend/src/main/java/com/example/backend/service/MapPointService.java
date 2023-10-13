@@ -4,6 +4,7 @@ import java.awt.geom.Point2D;
 import java.util.List;
 
 import com.example.backend.endpoint.dto.MapPointDto;
+import com.example.backend.entitiy.MapPoint;
 
 public interface MapPointService {
 
@@ -40,4 +41,11 @@ public interface MapPointService {
    * @return a List of all newly created MapPoints
    */
   List<MapPointDto> addConnection(List<MapPointDto> cityMapPoints);
+
+  /**
+   * Deletes the MapPoint from local storage
+   *
+   * @param id of the MapPoint to be deleted
+   */
+  void deleteConnection(Long id);
 }

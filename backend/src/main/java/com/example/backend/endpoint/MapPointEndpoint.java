@@ -8,6 +8,7 @@ import com.example.backend.service.MapPointService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -39,6 +40,13 @@ public class MapPointEndpoint {
   public MapPointDto updateMapPoint(@PathVariable Long id, @RequestBody MapPointDto mapPointDto)
   {
     return mapPointService.update(mapPointDto);
+  }
+
+  @DeleteMapping(value = "/{id}")
+  @CrossOrigin(origins = "http://localhost:4200")
+  @ResponseStatus(HttpStatus.OK)
+  public void deleteConnection(@PathVariable Long id) {
+    mapPointService.deleteConnection(id);
   }
 
   @PutMapping(value = "")

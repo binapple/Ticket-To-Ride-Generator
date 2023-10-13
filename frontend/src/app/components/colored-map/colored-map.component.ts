@@ -50,6 +50,8 @@ export class ColoredMapComponent implements OnInit {
   ];
   mappedMPs = new Map<number, MapPointDto>();
 
+  //used for new connections
+  cityMapPoints: MapPointDto[] = [];
 
   constructor(private route: ActivatedRoute,
               private mapService: MapService,
@@ -91,7 +93,7 @@ export class ColoredMapComponent implements OnInit {
         if (this.mapPoints == undefined) {
           this.getMapPoints(Number(id));
         } else {
-          this.drawMapPoints();
+          this.drawMapPoints(false);
         }
       }
 
@@ -104,7 +106,7 @@ export class ColoredMapComponent implements OnInit {
     this.mapL = mapL;
   }
 
-  drawMapPoints() {
+  drawMapPoints(drawOnlyCityCircles: boolean) {
 
     this.layers = [];
 
@@ -183,27 +185,49 @@ export class ColoredMapComponent implements OnInit {
               }
             }
           });
-        const circleLatLng = new LatLng(mp.location.y, mp.location.x);
-        if(mp.color !== Colorization.CITY) {
-          this.layers.push(circle(circleLatLng, 0, {color: '#ff0000'}));
 
-          const newCircle = circle(circleLatLng,0, {color:'#d94e4e'}).on("dblclick",
 
-            e => {
-              this.zone.run(() => this.circleClick(e.target ,mp.id));
+
+          const circleLatLng = new LatLng(mp.location.y, mp.location.x);
+          if (mp.color !== Colorization.CITY) {
+            if(!drawOnlyCityCircles) {
+             const newCircle = circle(circleLatLng, 0, {color: '#d94e4e'}).on("dblclick",
+
+                e => {
+                  this.zone.run(() => this.circleClick(e.target, mp.id));
+                }
+              );
+
+              this.layers.push(newCircle);
+
             }
 
-          );
+          } else {
+            if(!drawOnlyCityCircles) {
+              const radius = (Math.abs(this.savedMap.northEastBoundary.x - this.savedMap.southWestBoundary.x)) * 10 / 1189;
+              this.layers.push(circle(circleLatLng, radius * 1000, {
+                color: '#000000',
+                fillOpacity: 100,
+                fill: true,
+                fillColor: '#92999f'
+              }));
+            }
+            else {
+              const radius = (Math.abs(this.savedMap.northEastBoundary.x - this.savedMap.southWestBoundary.x)) * 10 / 1189;
+              const newCircle = circle(circleLatLng, radius * 1000, {color: '#d94e4e'}).on("dblclick",
 
-          this.layers.push(newCircle);
+                e => {
+                  this.zone.run(() => this.cityClick(mp));
+                }
+              ).bindTooltip(mp.name);
 
+              this.layers.push(newCircle);
+            }
+          }
 
-        }else {
-          const radius = (Math.abs(this.savedMap.northEastBoundary.x - this.savedMap.southWestBoundary.x)) * 10 / 1189;
-          this.layers.push(circle(circleLatLng, radius*1000, {color: '#000000', fillOpacity: 100, fill: true, fillColor: '#92999f'}));
-        }
-        mp.isDrawn = true;
-        this.mappedMPs.set(mp.id, mp);
+          mp.isDrawn = true;
+          this.mappedMPs.set(mp.id, mp);
+
       });
     }
   }
@@ -212,7 +236,7 @@ export class ColoredMapComponent implements OnInit {
     this.mapService.getMapPoints(id).subscribe({
       next: data => {
         this.mapPoints = data;
-        this.drawMapPoints();
+        this.drawMapPoints(false);
       }
     })
   }
@@ -239,5 +263,30 @@ export class ColoredMapComponent implements OnInit {
       }
     });
 
+  }
+
+  createConnection() {
+    this.drawMapPoints(true);
+  }
+
+  private cityClick(mp: MapPointDto) {
+    console.log(mp);
+    if(this.cityMapPoints.length < 1)
+    {
+      this.cityMapPoints.push(mp);
+    }
+    else
+    {
+      this.cityMapPoints.push(mp);
+      this.mapPointService.addConnection(this.cityMapPoints).subscribe(
+        {
+          next: data => {
+            this.mapPoints.concat(data);
+            this.cityMapPoints = [];
+            this.getMapPoints(this.savedMap.id);
+          }
+        }
+      )
+    }
   }
 }

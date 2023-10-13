@@ -14,6 +14,7 @@ import com.example.backend.repository.MapPointRepository;
 import com.example.backend.repository.MapRepository;
 import com.example.backend.service.MapPointService;
 import com.example.backend.type.Colorization;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -140,23 +141,54 @@ public class MapPointServiceImpl implements MapPointService {
   }
 
   @Override
+  public void deleteConnection(Long id) {
+
+    MapPoint mP = mapPointRepository.getReferenceById(id);
+    List<MapPoint> toBeDeleted = getAllConnectionNeighbors(mP);
+
+    //neighbors have to be updated so that removed MapPoints don't show up anymore
+    for (MapPoint m: toBeDeleted
+         ) {
+      Set<MapPoint> neighbors = m.getNeighbors();
+      for (MapPoint neighbor: neighbors
+           ) {
+        Set<MapPoint> neighborNeighbors = neighbor.getNeighbors();
+        neighborNeighbors.remove(m);
+        neighbor.setNeighbors(neighborNeighbors);
+        mapPointRepository.save(neighbor);
+      }
+      //as m gets deleted anyway his neighbors gets set to empty
+      m.setNeighbors(new HashSet<>());
+      mapPointRepository.save(m);
+    }
+
+    mapPointRepository.deleteAll(toBeDeleted);
+  }
+
+  @Override
   public List<MapPointDto> addConnection(List<MapPointDto> cityMapPoints) {
 
     //check if MapPoints are city MapPoints and if there is two of them
     MapPointDto mPDto1 = cityMapPoints.get(0);
     MapPointDto mPDto2 = cityMapPoints.get(1);
+try {
+  MapPoint mP1 = mapPointRepository.getReferenceById(mPDto1.getId());
+  MapPoint mP2 = mapPointRepository.getReferenceById(mPDto2.getId());
 
-    MapPoint mP1 = mapPointRepository.getReferenceById(mPDto1.getId());
-    MapPoint mP2 = mapPointRepository.getReferenceById(mPDto2.getId());
+  if(mP1.getColor() == Colorization.CITY && mP2.getColor() == Colorization.CITY)
+  {
+    List<MapPoint> newlyCreatedMapPoints = createConnection(mP1, mP2);
+    return mapPointMapper.mapPointListToMapPointDtoListCustom(newlyCreatedMapPoints);
+  }
 
-    if(mP1 != null && mP2 != null)
-    {
-      if(mP1.getColor() == Colorization.CITY && mP2.getColor() == Colorization.CITY)
-      {
-        List<MapPoint> newlyCreatedMapPoints = createConnection(mP1, mP2);
-        return mapPointMapper.mapPointListToMapPointDtoListCustom(newlyCreatedMapPoints);
-      }
-    }
+} catch (EntityNotFoundException e)
+{
+  return null;
+}
+
+
+
+
 
     return null;
 

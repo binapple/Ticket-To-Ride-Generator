@@ -24,6 +24,26 @@ export class MapPointService {
   }
 
   /**
+   * Deletes a mapPoint from the backend
+   *
+   * @param id of mapPoint to be deleted from the backend
+   */
+  deleteConnection(id: number): Observable<void> {
+    return this.httpClient.delete<void>(this.baseURI + '/mapPoints/' + id);
+  }
+
+  /**
+   * Creates a new Connection and thus new MapPoints between two existing city MapPoints
+   * New Connections are always colorless and have no tunnels or jokers
+   *
+   * @param cityMapPoints List of CityMapPoints
+   * @return a List of all newly created MapPoints
+   */
+  addConnection(cityMapPoints: MapPointDto[]): Observable<MapPointDto[]> {
+    return this.httpClient.put<MapPointDto[]>(this.baseURI + '/mapPoints', cityMapPoints);
+  }
+
+  /**
    * updates one MapPointDto from the backend
    *
    * @param mapPointDto representation of a MapPoint to update
@@ -33,4 +53,6 @@ export class MapPointService {
   updateMapPoint(mapPointDto: MapPointDto): Observable<MapPointDto> {
     return this.httpClient.put<MapPointDto>(this.baseURI + '/mapPoints/' + mapPointDto.id, mapPointDto);
   }
+
+
 }

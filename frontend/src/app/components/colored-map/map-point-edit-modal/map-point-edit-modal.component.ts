@@ -64,4 +64,12 @@ export class MapPointEditModalComponent {
   }
 
   protected readonly Colorization = Colorization;
+
+  deleteConnection() {
+    this.mapPointService.deleteConnection(this.mapPoint.id).subscribe({
+      next: data => {
+        this.activeModal.close(true);
+      }
+    })
+  }
 }
