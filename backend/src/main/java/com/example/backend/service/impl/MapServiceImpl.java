@@ -34,6 +34,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import javax.sound.sampled.EnumControl;
 
 @Service
 public class MapServiceImpl implements MapService {
@@ -264,7 +265,7 @@ public class MapServiceImpl implements MapService {
     reduceEdges(graph,map);
 
 
-    //result of edge reduction needs to be saved: Neigbors are MapPoints that are connected by edges
+    //result of edge reduction needs to be saved: Neighbors are MapPoints that are connected by edges
       for (MapPoint p: graph.vertexSet()
            ) {
           Set<MapPoint> pNeighbors = new HashSet<>();
@@ -301,162 +302,179 @@ public class MapServiceImpl implements MapService {
 
   private void reduceEdges(Graph<MapPoint, DefaultWeightedEdge> graph, Map map) {
 
-      Set<DefaultWeightedEdge> edges = graph.edgeSet();
+    Set<DefaultWeightedEdge> edges = graph.edgeSet();
 
-      List<DefaultWeightedEdge> edgeList = new ArrayList<>(edges);
+    List<DefaultWeightedEdge> edgeList = new ArrayList<>(edges);
 
-      //comparator used for sorting by edge weight
-      Comparator<DefaultWeightedEdge> comp = (o1, o2) -> {
-          double first = graph.getEdgeWeight(o1);
-          double second = graph.getEdgeWeight(o2);
-          return Double.compare(second, first);
-      };
+    //comparator used for sorting by edge weight
+    Comparator<DefaultWeightedEdge> comp = (o1, o2) -> {
+      double first = graph.getEdgeWeight(o1);
+      double second = graph.getEdgeWeight(o2);
+      return Double.compare(second, first);
+    };
+
+    edgeList.sort(comp);
+
+    //used for calculation of trainsizes and city diameters
+    Point2D.Float sw = map.getSouthWestBoundary();
+    Point2D.Float ne = map.getNorthEastBoundary();
+
+    //trainsize calculated off the set values
+    float trainsize = (Math.abs(ne.x - sw.x)) * TRAINLENGTH / FORMATLENGTH;
+    //define a diameter, because cities have a circle around them
+    float cityDiameter = (Math.abs(ne.x - sw.x)) * CITYDIAMETER / FORMATLENGTH;
+
+    float eight = trainsize * 8 + cityDiameter;
+    float six = trainsize * 6 + cityDiameter;
+    float five = trainsize * 5 + cityDiameter;
+
+    //remove connections with greater equal length then 5
+    //keep ones that are between 4 and 5 as connections are not lines that always start on the city itself
+    //for performance reasons binary search is used to have a faster deletion of unnecessary edges
+
+ 
+    float tooBigSize = eight * 2;
+    while (tooBigSize >= five) {
+
+      //This step is used to have a DefaultWeightEdge Object of the graph that can be deleted and is needed for binary search
+      Iterator<DefaultWeightedEdge> i = edgeList.iterator();
+      DefaultWeightedEdge e = new DefaultWeightedEdge();
+      //used to keep enough of the long edges
+      //int skipCounter = 0;
+      while (i.hasNext()) {
+        DefaultWeightedEdge current = i.next();
+        if (graph.getEdgeWeight(current) >= tooBigSize) {
+
+          e = current;
+          graph.setEdgeWeight(e, tooBigSize);
+          break;
+
+        }
+      }
+
+      Graph<MapPoint, DefaultWeightedEdge> safetyCopy = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
+
+      Graphs.addGraph(safetyCopy, graph);
 
       edgeList.sort(comp);
+      int index = Collections.binarySearch(edgeList, e, comp);
+      graph.removeEdge(e);
+      edgeList.remove(e);
 
-      //used for calculation of trainsizes and city diameters
-      Point2D.Float sw = map.getSouthWestBoundary();
-      Point2D.Float ne = map.getNorthEastBoundary();
+      //set the List of Edges that are to be removed from the graph
+      List<DefaultWeightedEdge> toRemove;
+      if (index < 0) {
+        index = 0;
+        toRemove = Collections.emptyList();
+      } else {
+        toRemove = edgeList.subList(0, index);
+      }
+      graph.removeAllEdges(toRemove);
 
-      //trainsize calculated off the set values
-      float trainsize = (Math.abs(ne.x - sw.x)) * TRAINLENGTH / FORMATLENGTH;
-      //define a diameter, because cities have a circle around them
-      float cityDiameter = (Math.abs(ne.x - sw.x)) * CITYDIAMETER / FORMATLENGTH;
-
-      float eight = trainsize * 8 + cityDiameter;
-      float six = trainsize * 6 + cityDiameter;
-      float five = trainsize * 5 + cityDiameter;
-
-      //remove connections with greater equal length then eight and leave 1 of eight
-      //then remove all of 7 and all of 6 except 2
-      //then remove all of 5 (keep ones that are between 4 and 5 as connections are not lines that always start on the city itself)
-      //for performance reasons binary search is used to have a faster deletion of unnecessary edges
-      float tooBigSize = eight * 2;
-      while (tooBigSize >= five) {
-
-          //This step is used to have a DefaultWeightEdge Object of the graph that can be deleted and is needed for binary search
-          Iterator<DefaultWeightedEdge> i = edgeList.iterator();
-          DefaultWeightedEdge e = new DefaultWeightedEdge();
-          //used to keep enough of the long edges
-          int skipCounter = 0;
-          while (i.hasNext()) {
-              DefaultWeightedEdge current = i.next();
-              if (graph.getEdgeWeight(current) >= tooBigSize) {
-
-                  if (tooBigSize <= eight && tooBigSize > six) {
-                      if (skipCounter >= 1) {
-                          e = current;
-                          graph.setEdgeWeight(e, tooBigSize);
-                          break;
-                      }
-                  } else if (tooBigSize <= six) {
-                      if (skipCounter >= 3) {
-                          e = current;
-                          graph.setEdgeWeight(e, tooBigSize);
-                          break;
-                      }
-                  } else {
-                      e = current;
-                      graph.setEdgeWeight(e, tooBigSize);
-                      break;
-                  }
-
-                  skipCounter++;
-              }
-          }
-
-          Graph<MapPoint, DefaultWeightedEdge> safetyCopy = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
-
-          Graphs.addGraph(safetyCopy, graph);
-
-          edgeList.sort(comp);
-          int index = Collections.binarySearch(edgeList, e, comp);
-          graph.removeEdge(e);
-          edgeList.remove(e);
-
-          //used to keep long edges
-          int startIndex = 0;
-          if (tooBigSize <= eight && tooBigSize > six) {
-              startIndex = startIndex + 1;
-          }
-          if (tooBigSize <= six) {
-              startIndex = startIndex + 3;
-          }
-
-          //set the List of Edges that are to be removed from the graph
-          List<DefaultWeightedEdge> toRemove;
-          if (index < 0) {
-              index = 0;
-              toRemove = Collections.emptyList();
-          }
-          else {
-            toRemove=edgeList.subList(startIndex, index);
-          }
-          graph.removeAllEdges(toRemove);
-
-          //if removing the previous list has led to connection issues, the list itself is checked one by one
-          //to find out the edges that are causing the issue and set a boolean to show the issue in the frontend
-          if (GraphTests.isConnected(graph)) {
-              edgeList = edgeList.subList(index, edgeList.size());
-              tooBigSize = tooBigSize - trainsize;
-          } else {
-              Graphs.addGraph(graph, safetyCopy);
-              checkOneByOne(graph, toRemove);
-          }
-
-
+      //if removing the previous list has led to connection issues, the list itself is checked one by one
+      //to find out the edges that are causing the issue and set a boolean to show the issue in the frontend
+      if (GraphTests.isConnected(graph)) {
+        edgeList = edgeList.subList(index, edgeList.size());
+        tooBigSize = tooBigSize - trainsize;
+      } else {
+        Graphs.addGraph(graph, safetyCopy);
+        checkOneByOne(graph, toRemove);
       }
 
-      //get updated edge List after reduction of edges
-      edgeList = edges.stream().toList();
 
-      //Check if connections are intersecting each other
-      for (DefaultWeightedEdge e : edgeList
+    }
+
+    //new Approach for long connections 8 and two 6 are added after reduction
+    //by not setting a weight on the edge, they are prioritized by the following intersection algorithm
+
+    //find out lone cities ( only one, two or three neighbors)
+    List<MapPoint> loneCities = new ArrayList<>();
+
+    for (MapPoint m : graph.vertexSet()
+    ) {
+      int neighborCount = Graphs.neighborListOf(graph, m).size();
+      if (neighborCount == 1 || neighborCount == 2 || neighborCount == 3) {
+        loneCities.add(m);
+      }
+    }
+
+    int eightCount = 1;
+    int sixCount = 2;
+
+
+    //match cities to each other when they meet the length criteria
+    for (MapPoint one:
+         loneCities) {
+      for (MapPoint onesNeighbor:
+           loneCities) {
+        double weight = one.getLocation().distance(onesNeighbor.getLocation());
+
+        double weightDivision = weight / trainsize;
+        float edgeSize = (float) weightDivision;
+
+        if(edgeSize <= eight && edgeSize > six)
+        {
+          if(eightCount > 0) {
+            graph.addEdge(one, onesNeighbor);
+            eightCount--;
+          }
+        }
+
+        if(edgeSize <= six && edgeSize > five)
+        {
+          if(sixCount > 0)
+          {
+            graph.addEdge(one,onesNeighbor);
+            sixCount--;
+          }
+        }
+
+      }
+    }
+
+    //get updated edge List after reduction of edges and adding long ones
+    edgeList = edges.stream().toList();
+    
+
+    //Check if connections are intersecting each other
+    for (DefaultWeightedEdge e : edgeList
+    ) {
+      MapPoint source = graph.getEdgeSource(e);
+      MapPoint target = graph.getEdgeTarget(e);
+      Line2D edgeLine = new Line2D.Float(source.getLocation(), target.getLocation());
+
+      for (DefaultWeightedEdge intersect : edgeList
       ) {
-          MapPoint source = graph.getEdgeSource(e);
-          MapPoint target = graph.getEdgeTarget(e);
-          Line2D edgeLine = new Line2D.Float(source.getLocation(), target.getLocation());
+        MapPoint interSource = graph.getEdgeSource(intersect);
+        MapPoint interTarget = graph.getEdgeTarget(intersect);
+        Line2D interLine = new Line2D.Float(interSource.getLocation(), interTarget.getLocation());
 
-          for (DefaultWeightedEdge intersect : edgeList
-          ) {
-              MapPoint interSource = graph.getEdgeSource(intersect);
-              MapPoint interTarget = graph.getEdgeTarget(intersect);
-              Line2D interLine = new Line2D.Float(interSource.getLocation(), interTarget.getLocation());
+        if (edgeLine.intersectsLine(interLine)) {
 
-              if (edgeLine.intersectsLine(interLine)) {
+          //We do not want to delete the connection itself (because it is of course intersecting itself)
+          if (source.getLocation() != interSource.getLocation() && source.getLocation() != interTarget.getLocation()) {
+            if (target.getLocation() != interSource.getLocation() && target.getLocation() != interTarget.getLocation()) {
+              double weightEdge = graph.getEdgeWeight(e);
+              double weightInter = graph.getEdgeWeight(intersect);
 
-                  //We do not want to delete the connection itself (because it is of course intersecting itself)
-                  if (source.getLocation() != interSource.getLocation() && source.getLocation() != interTarget.getLocation()) {
-                      if (target.getLocation() != interSource.getLocation() && target.getLocation() != interTarget.getLocation()) {
-                              double weightEdge = graph.getEdgeWeight(e);
-                              double weightInter = graph.getEdgeWeight(intersect);
+             // the algorithm prefers shorter connections to keep the grid cleaner
+              if (weightEdge > weightInter) {
 
-                              //this step is used to keep the 8 and 6 long connections
-                              //otherwise the algorithm prefers shorter connections to keep the grid cleaner
-                              if (weightEdge > weightInter) {
-                                  if(weightEdge > six)
-                                  {
-                                      graph.removeEdge(intersect);
-                                  } else {
-                                      graph.removeEdge(e);
-                                      break;
-                                  }
-                              } else {
-                                  if(weightInter > six)
-                                  {
-                                      graph.removeEdge(e);
-                                      break;
-                                  } else {
+                graph.removeEdge(e);
+                break;
 
-                                      graph.removeEdge(intersect);
-                                  }
-                              }
-                      }
-                  }
+              } else {
+
+
+                graph.removeEdge(intersect);
+
               }
+            }
           }
-
+        }
       }
+
+    }
 
 
   }
