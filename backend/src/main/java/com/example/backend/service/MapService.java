@@ -77,4 +77,13 @@ public interface MapService {
    * @return a List of MapPointDtos
    */
     List<MapPointDto> getMapPoints(Long id);
+
+  /**
+   * Gets / Creates the GameBoard for a saved Map and its corresponding MapPoints
+   *
+   * @param id of the Map
+   * @return a printable Version of the GameBoard
+   */
+  byte[] getGameBoard(Long id);
+
 }

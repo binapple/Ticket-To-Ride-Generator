@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created by sK1 2.0rc5 (https://sk1project.net/) -->
+<svg xmlns="http://www.w3.org/2000/svg" height="28.3464566929pt" viewBox="0 0 28.3464566929 28.3464566929" width="28.3464566929pt" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<defs id="defs1">
+	<linearGradient y2="14.1732283465" spreadMethod="pad" gradientUnits="userSpaceOnUse" x2="28.3451033465" y1="14.1732283465" x1="0.00135334645669" id="grad1">
+		<stop style="stop-color:#ffffff;stop-opacity:1.0;" offset="0.0" />
+		<stop style="stop-color:#9e9fa1;stop-opacity:1.0;" offset="0.5" />
+		<stop style="stop-color:#68696a;stop-opacity:1.0;" offset="0.75" />
+		<stop style="stop-color:#2d2c2b;stop-opacity:1.0;" offset="1.0" />
+	</linearGradient>
+	<linearGradient y2="14.1732283465" spreadMethod="pad" gradientUnits="userSpaceOnUse" x2="26.0482283465" y1="14.1732283465" x1="2.29822834646" id="grad2">
+		<stop style="stop-color:#ffffff;stop-opacity:1.0;" offset="0.0" />
+		<stop style="stop-color:#fdd191;stop-opacity:1.0;" offset="0.5" />
+		<stop style="stop-color:#fbb956;stop-opacity:1.0;" offset="0.75" />
+		<stop style="stop-color:#f9ae38;stop-opacity:1.0;" offset="0.875" />
+		<stop style="stop-color:#f7a212;stop-opacity:1.0;" offset="1.0" />
+	</linearGradient>
+</defs>
+<g>
+	<path style="stroke-width:0.2268;stroke:#2d2c2b;fill-rule:evenodd;stroke-miterlimit:10.433;fill:url(#grad1);" d="M 28.3459,14.1731 C 28.3459,6.3471 21.9992,0.0005 14.1732,0.0005 6.3472,0.0005 0.0006,6.3471 0.0006,14.1731 0.0006,21.9991 6.3472,28.3458 14.1732,28.3458 21.9992,28.3458 28.3459,21.9991 28.3459,14.1731 Z" />
+	<path style="stroke-width:0.0226;stroke:#2d2c2b;fill-rule:evenodd;stroke-miterlimit:10.433;fill:url(#grad2);" d="M 26.0475,14.1735 C 26.0475,7.9189 20.7298,2.8466 14.1726,2.8466 7.6154,2.8466 2.2978,7.9189 2.2978,14.1735 2.2978,20.4281 7.6154,25.5004 14.1726,25.5004 20.7298,25.5004 26.0475,20.4281 26.0475,14.1735 Z" />
+	
+	
+	<!-- Centered text element -->
+        <text x="50%" y="50%" text-anchor="middle" alignment-baseline="middle" fill="black" id="textElement">Your Text Here</text>
+</g>
+</svg>

@@ -196,7 +196,7 @@ try {
   }
 
   private List<MapPoint> createConnection(MapPoint mP1, MapPoint mP2) {
-
+    //TODO update according to changes in MapService
     //List containing new MapPoints
     List<MapPoint> newMapPoints  = new ArrayList<>();
 
@@ -208,13 +208,16 @@ try {
     //calculate the ratio of map to real size
     Map map = mP1.getMap();
 
-    Point2D.Float sw = map.getSouthWestBoundary();
-    Point2D.Float ne = map.getNorthEastBoundary();
+    float nwX = map.getNorthWestBoundary().x;
+    float seaX = map.getSouthEastBoundary().x;
+
+
+    float mapWidth = calculateDistancesFromCoordinateSystem(nwX, seaX);
 
     //trainsize calculated off the set values
-    float trainsize = (Math.abs(ne.x - sw.x)) * MapServiceImpl.TRAINLENGTH / MapServiceImpl.FORMATLENGTH;
+    float trainsize = mapWidth * MapServiceImpl.TRAINLENGTH / MapServiceImpl.FORMATLENGTH;
     //define a diameter, because cities have a circle around them
-    float cityDiameter = (Math.abs(ne.x - sw.x)) * MapServiceImpl.CITYDIAMETER / MapServiceImpl.FORMATLENGTH;
+    float cityDiameter = mapWidth * MapServiceImpl.CITYDIAMETER / MapServiceImpl.FORMATLENGTH;
 
 
     double weight = origin.getLocation().distance(destination.getLocation());
@@ -226,7 +229,7 @@ try {
 
 
 
-    //split the edge into train-sized parts, therefore calculate deltas
+    //split the edge into train-sized parts but add a padding to it therefore "distanceBetween" points should be calculated
     float deltaX = destination.getLocation().x - origin.getLocation().x;
     float deltaY = destination.getLocation().y - origin.getLocation().y;
     float distanceBetween = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -266,7 +269,7 @@ try {
 
 
     //For each trainsized part of the Connection add a new "in-between" MapPoint (for later editing of connections)
-    for (int i = 0; i < edgeSize-1; i++) {
+    for (int i = 1; i < edgeSize; i++) {
       float newX = paddedStart.x + i * stepX;
       float newY = paddedStart.y + i * stepY;
 
@@ -331,5 +334,17 @@ try {
     return newMapPoints;
 
 
+  }
+
+  //this method allows us to calculate Distances from two points of our geographical coordinate System.
+  //This method should include all the special cases where the points are not in the same quadrant of the graph
+  private float calculateDistancesFromCoordinateSystem(float origin, float distanceToOrigin) {
+    if (origin >= 0 && distanceToOrigin >= 0) {
+      return Math.abs(origin - distanceToOrigin);
+    } else if (origin < 0 && distanceToOrigin < 0) {
+      return Math.abs(origin) - Math.abs(distanceToOrigin);
+    } else {
+      return Math.abs(origin) + Math.abs(distanceToOrigin);
+    }
   }
 }

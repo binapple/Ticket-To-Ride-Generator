@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created by sK1 2.0rc5 (https://sk1project.net/) -->
+<svg xmlns="http://www.w3.org/2000/svg" height="22.9606299213pt" viewBox="0 0 75.1181102362 22.9606299213" width="75.1181102362pt" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" id="e90ee50f-727d-11ee-b0e0-309c23a67cc8">
+<defs id="defs1">
+	<radialGradient spreadMethod="pad" gradientUnits="userSpaceOnUse" cy="-0.001953125" cx="-0.001953125" gradientTransform="matrix(1.0, 0.0, 0.0, -1.0, 37.5590551181, 11.48031496065)" r="4.849609375" id="gradyellow">
+		<stop style="stop-color:#ffed00;stop-opacity:1.0;" offset="0.0" />
+		<stop style="stop-color:#ffffff;stop-opacity:1.0;" offset="1.0" />
+	</radialGradient>
+</defs>
+<g>
+	<path style="stroke-linejoin:round;stroke:#000000;stroke-linecap:round;stroke-miterlimit:4.0;stroke-width:0.5796;fill:#f8e13b;" d="M 75.1178,0.4822 C 75.1178,0.2176 74.9065,0.003 74.6459,0.003 L 0.4722,0.003 C 0.2116,0.003 0.0003,0.2176 0.0003,0.4822 L 0.0003,22.4785 C 0.0003,22.7431 0.2116,22.9578 0.4722,22.9578 L 74.6459,22.9578 C 74.9065,22.9578 75.1178,22.7431 75.1178,22.4785 L 75.1178,0.4822 Z" />
+	<path style="stroke:#000000;stroke-width:0.0;stroke-miterlimit:4.0;fill:none;" d="M 73.0395,2.0526 L 75.1178,0.003 M 73.0395,20.9081 L 75.1178,22.9578 M 2.0546,20.9081 L 0.0003,22.9578 M 2.0546,2.0526 L 0.0003,0.003 M 73.0395,2.0526 L 73.0395,20.9081 2.0546,20.9081 2.0546,2.0526 73.0395,2.0526 Z" />
+	<path style="stroke-linejoin:round;fill-rule:evenodd;stroke:#000000;stroke-linecap:round;stroke-miterlimit:4.0;stroke-width:0.2973;fill:url(#gradyellow);" d="M 40.3805,7.4858 C 39.5978,8.0632 38.6184,8.4103 37.5595,8.4123 36.4998,8.4109 35.5204,8.0645 34.7237,7.4778 33.5079,8.3902 32.7159,9.8413 32.7132,11.4799 32.7158,13.1205 33.5085,14.5724 34.7254,15.4648 35.5217,14.8979 36.5003,14.5508 37.5585,14.5484 38.6191,14.55 39.5992,14.8971 40.3962,15.4848 41.6119,14.5717 42.4033,13.1199 42.4049,11.4806 42.4028,9.8405 41.6107,8.3886 40.3945,7.4959 Z" />
+</g>
+</svg>
