@@ -1058,10 +1058,10 @@ public class MapServiceImpl implements MapService {
                 float relativeNextY = calculateDistancesFromCoordinateSystem(nwY, nextY);
 
                 //translate them into the coordinate System of the svg
-                double svgX = Math.floor(relativeX * FORMATLENGTH / mapWidth)*SVGMMCONSTANT;
-                double svgY = Math.floor(relativeY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
-                double svgNextX = Math.floor(relativeNextX * FORMATLENGTH / mapWidth)*SVGMMCONSTANT;
-                double svgNextY = Math.floor(relativeNextY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
+                double svgX = Math.round(relativeX * FORMATLENGTH / mapWidth)*SVGMMCONSTANT;
+                double svgY = Math.round(relativeY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
+                double svgNextX = Math.round(relativeNextX * FORMATLENGTH / mapWidth)*SVGMMCONSTANT;
+                double svgNextY = Math.round(relativeNextY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
 
                 //alter the rotationAngle so that it fits the new translated coordinates
                 double deltaX = svgNextX - svgX;
@@ -1127,8 +1127,8 @@ public class MapServiceImpl implements MapService {
         float relativeX = calculateDistancesFromCoordinateSystem(nwX, x);
 
         //translate them into the coordinate System of the svg
-        double svgX = Math.floor(relativeX * FORMATLENGTH / mapWidth)*SVGMMCONSTANT;
-        double svgY = Math.floor(relativeY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
+        double svgX = Math.round(relativeX * FORMATLENGTH / mapWidth)*SVGMMCONSTANT;
+        double svgY = Math.round(relativeY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
 
         String transformation = "translate(" + svgX + ", " + svgY + ")";
 
