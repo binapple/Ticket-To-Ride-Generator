@@ -21,7 +21,12 @@ import org.apache.batik.anim.dom.SVGDOMImplementation;
 import org.apache.batik.anim.dom.SVGOMElement;
 import org.apache.batik.svggen.SVGGeneratorContext;
 import org.apache.batik.svggen.SVGGraphics2D;
+import org.apache.batik.transcoder.Transcoder;
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.util.XMLResourceDescriptor;
+import org.apache.fop.svg.PDFTranscoder;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphTests;
 import org.jgrapht.Graphs;
@@ -29,6 +34,7 @@ import org.jgrapht.generate.CompleteGraphGenerator;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -38,11 +44,20 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.svg.SVGDocument;
+import org.w3c.dom.svg.SVGElement;
 
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
@@ -50,10 +65,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
+import javax.imageio.ImageIO;
 
 @Service
 public class MapServiceImpl implements MapService {
+
 
 
   private final MapMapper mapMapper;
@@ -64,7 +84,7 @@ public class MapServiceImpl implements MapService {
   private final MapPointRepository mapPointRepository;
 
   //these variables are used to change the length and height of the resulting game plan (now it is set to DIN A0)
-  public static final int FORMATLENGTH = 1189;
+  public static final int FORMATWIDTH = 1189;
   public static final int FORMATHEIGHT = 841;
 
   //this variable is the real size equivalent of a train from Ticket-To-Ride in millimeters
@@ -72,11 +92,18 @@ public class MapServiceImpl implements MapService {
 
   //this variable is the real size equivalent of a cities diameter from Ticket-To-Ride in millimeters
   public static final float CITYDIAMETER = 10.0f;
+
+  //ratio of inches to millimeters
+  public static final double INCH_IN_MILLIMETERS = 25.4;
+
+  //Constant for deciding how big the raster image will be rendered
+  public static final int DPI = 96;
+  //getting folder path from application.properties
+  @Value("${maperitive.folderpath}")
+  private String maperitivePath;
+
   //SVG Constant for mm
-  public static final double SVGMMCONSTANT = 3.543307;
-
-
-
+  public static final double SVGMMCONSTANT = DPI / INCH_IN_MILLIMETERS;
 
   @Autowired
   public MapServiceImpl(MapMapper mapMapper, MapRepository mapRepository, CityMapper cityMapper, CityRepository cityRepository, MapPointMapper mapPointMapper, MapPointRepository mapPointRepository) {
@@ -344,9 +371,9 @@ public class MapServiceImpl implements MapService {
 
 
     //trainsize calculated off the set values
-    float trainsize = mapWidth * TRAINLENGTH / FORMATLENGTH;
+    float trainsize = mapWidth * TRAINLENGTH / FORMATWIDTH;
     //define a diameter, because cities have a circle around them
-    float cityDiameter = mapWidth * CITYDIAMETER / FORMATLENGTH;
+    float cityDiameter = mapWidth * CITYDIAMETER / FORMATWIDTH;
 
     float eight = trainsize * 8 + cityDiameter;
     float six = trainsize * 6 + cityDiameter;
@@ -559,9 +586,9 @@ public class MapServiceImpl implements MapService {
       float mapWidth = calculateDistancesFromCoordinateSystem(nwX, seaX);
 
       //trainsize calculated off the set values
-      float trainsize = mapWidth * TRAINLENGTH / FORMATLENGTH;
+      float trainsize = mapWidth * TRAINLENGTH / FORMATWIDTH;
       //define a diameter, because cities have a circle around them
-      float cityDiameter = mapWidth * CITYDIAMETER / FORMATLENGTH;
+      float cityDiameter = mapWidth * CITYDIAMETER / FORMATWIDTH;
 
 
       //find out how many edges the graph has
@@ -947,8 +974,41 @@ public class MapServiceImpl implements MapService {
 
       //Size it to desired Format
       Element svgRoot = mergedDoc.getRootElement();
-      svgRoot.setAttributeNS(null, "width", String.valueOf(FORMATLENGTH)+"mm");
+      svgRoot.setAttributeNS(null, "width", String.valueOf(FORMATWIDTH)+"mm");
       svgRoot.setAttributeNS(null, "height", String.valueOf(FORMATHEIGHT)+"mm");
+
+
+      //Render the image in maperitive
+      renderMap(map);
+
+      //Adding the rendered image to the empty svg
+
+      int calcWidth = (int) Math.floor(FORMATWIDTH * DPI / INCH_IN_MILLIMETERS);
+      int calcHeight = (int) Math.floor(FORMATHEIGHT * DPI / INCH_IN_MILLIMETERS);
+
+      String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
+      String xlinkNS = "http://www.w3.org/1999/xlink" ;
+
+      //Embed the image to the svg file by encoding it to base64
+      Path imagePath = Paths.get(maperitivePath, "output", "map" + map.getId().toString() + ".png");
+
+      byte[] imageBytes = new byte[0];
+      try {
+        imageBytes = Files.readAllBytes(imagePath);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+
+      String uri =  "data:image/png;base64," + base64Image;
+      Element img = mergedDoc.createElementNS(svgNS, "image");
+      img.setAttributeNS(xlinkNS, "xlink:href", uri);
+      img.setAttributeNS(null, "x", "0");
+      img.setAttributeNS(null, "y", "0");
+      img.setAttributeNS(null, "width", String.valueOf(calcWidth));
+      img.setAttributeNS(null, "height", String.valueOf(calcHeight));
+      svgRoot.appendChild(img);
+
 
 
       //go through each "city" MapPoint
@@ -1058,9 +1118,9 @@ public class MapServiceImpl implements MapService {
                 float relativeNextY = calculateDistancesFromCoordinateSystem(nwY, nextY);
 
                 //translate them into the coordinate System of the svg
-                double svgX = Math.round(relativeX * FORMATLENGTH / mapWidth)*SVGMMCONSTANT;
+                double svgX = Math.round(relativeX * FORMATWIDTH / mapWidth)*SVGMMCONSTANT;
                 double svgY = Math.round(relativeY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
-                double svgNextX = Math.round(relativeNextX * FORMATLENGTH / mapWidth)*SVGMMCONSTANT;
+                double svgNextX = Math.round(relativeNextX * FORMATWIDTH / mapWidth)*SVGMMCONSTANT;
                 double svgNextY = Math.round(relativeNextY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
 
                 //alter the rotationAngle so that it fits the new translated coordinates
@@ -1127,7 +1187,7 @@ public class MapServiceImpl implements MapService {
         float relativeX = calculateDistancesFromCoordinateSystem(nwX, x);
 
         //translate them into the coordinate System of the svg
-        double svgX = Math.round(relativeX * FORMATLENGTH / mapWidth)*SVGMMCONSTANT;
+        double svgX = Math.round(relativeX * FORMATWIDTH / mapWidth)*SVGMMCONSTANT;
         double svgY = Math.round(relativeY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
 
         String transformation = "translate(" + svgX + ", " + svgY + ")";
@@ -1146,6 +1206,7 @@ public class MapServiceImpl implements MapService {
       }
 
       saveSVGDocument(mergedDoc, "merged.svg");
+      convertSVGtoPDF(mergedDoc, "merged.pdf");
 
 
     }
@@ -1191,10 +1252,23 @@ public class MapServiceImpl implements MapService {
   //here the svg documents get merged/appended to the initial one
   private static void appendSVGContent(SVGDocument targetDoc, SVGDocument sourceDoc) {
 
-    Element x = sourceDoc.getDocumentElement();
-    Node y = targetDoc.importNode(x, true);
-    targetDoc.getDocumentElement().appendChild(y);
+//    Element x = sourceDoc.getDocumentElement();
+//    Node y = targetDoc.importNode(x, true);
+//    targetDoc.getDocumentElement().appendChild(y);
 
+    Element srcElement;
+    Element dstElement;
+
+    srcElement = sourceDoc.getRootElement();
+
+    dstElement = targetDoc.getRootElement();
+
+    NodeList nodeList = srcElement.getChildNodes();
+    for (int i = 0; i < nodeList.getLength(); i++) {
+      Node node = nodeList.item(i);
+      Node importedNode = targetDoc.importNode(node, true);
+      dstElement.appendChild(importedNode);
+    }
 
   }
 
@@ -1209,6 +1283,79 @@ public class MapServiceImpl implements MapService {
       }
     } catch (IOException e) {
       e.printStackTrace();
+    }
+  }
+
+  private static void convertSVGtoPDF(Document document, String pdfFilePath) {
+    try{
+    Transcoder transcoder = new PDFTranscoder();
+    TranscoderInput transcoderInput = new TranscoderInput(document);
+    FileOutputStream fOStream = new FileOutputStream(pdfFilePath);
+    TranscoderOutput transcoderOutput = new TranscoderOutput(fOStream);
+      transcoder.transcode(transcoderInput, transcoderOutput);
+      fOStream.flush();
+      fOStream.close();
+    } catch (TranscoderException e) {
+      throw new RuntimeException(e);
+    } catch (FileNotFoundException e) {
+      throw new RuntimeException(e);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  //render the background image of the map through maperitive
+  private void renderMap(Map map)
+  {
+
+    // getting boundingBox values
+    double nwX = map.getNorthWestBoundary().x;
+    double nwY = map.getNorthWestBoundary().y;
+    double seaX = map.getSouthEastBoundary().x;
+    double seY = map.getSouthEastBoundary().y;
+
+    //getting min and max values of long & lat for maperitive
+    double minLong = Math.min(nwX, seaX);
+    double maxLong = Math.max(nwX,seaX);
+    double minLat = Math.min(nwY, seY);
+    double maxLat = Math.max(nwY,seY);
+
+    Long id = map.getId();
+
+    int calcWidth = (int) Math.floor(FORMATWIDTH * DPI / INCH_IN_MILLIMETERS);
+
+    // create a maperitive script for automatic rendering
+    String scriptContent = String.format(Locale.US,
+        "zoom-bounds bounds=%.15f,%.15f,%.15f,%.15f\n" +
+            "set-print-bounds-geo bounds=%.15f,%.15f,%.15f,%.15f\n" +
+            "export-bitmap width=%d file="+maperitivePath+"/output/map%d.png",
+        minLong,minLat,maxLong,maxLat,
+        minLong,minLat,maxLong,maxLat,
+        calcWidth, id
+        );
+
+    //save the script
+    String path = maperitivePath + "/Scripts/map" + id + ".mscript";
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
+      writer.write(scriptContent);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    //run maperitive with default script + custom script for rendering of map
+    ProcessBuilder processBuilder = new ProcessBuilder();
+
+    processBuilder.command(maperitivePath+"/Maperitive","-defscr", "-exa", path);
+    Process process = null;
+    try {
+      process = processBuilder.start();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    try {
+      int exitCode = process.waitFor();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
 }

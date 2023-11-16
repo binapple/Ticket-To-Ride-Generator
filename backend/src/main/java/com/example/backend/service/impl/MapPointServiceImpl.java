@@ -215,9 +215,9 @@ try {
     float mapWidth = calculateDistancesFromCoordinateSystem(nwX, seaX);
 
     //trainsize calculated off the set values
-    float trainsize = mapWidth * MapServiceImpl.TRAINLENGTH / MapServiceImpl.FORMATLENGTH;
+    float trainsize = mapWidth * MapServiceImpl.TRAINLENGTH / MapServiceImpl.FORMATWIDTH;
     //define a diameter, because cities have a circle around them
-    float cityDiameter = mapWidth * MapServiceImpl.CITYDIAMETER / MapServiceImpl.FORMATLENGTH;
+    float cityDiameter = mapWidth * MapServiceImpl.CITYDIAMETER / MapServiceImpl.FORMATWIDTH;
 
 
     double weight = origin.getLocation().distance(destination.getLocation());
