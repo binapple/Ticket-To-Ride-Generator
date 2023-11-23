@@ -30,6 +30,8 @@ import org.apache.fop.svg.PDFTranscoder;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphTests;
 import org.jgrapht.Graphs;
+import org.jgrapht.alg.interfaces.ShortestPathAlgorithm;
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.generate.CompleteGraphGenerator;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
@@ -83,9 +85,17 @@ public class MapServiceImpl implements MapService {
   private final MapPointMapper mapPointMapper;
   private final MapPointRepository mapPointRepository;
 
-  //these variables are used to change the length and height of the resulting game plan (now it is set to DIN A0)
+  //these variables are used to change the length and height in millimeters of the resulting game plan (now it is set to DIN A0)
   public static final int FORMATWIDTH = 1189;
   public static final int FORMATHEIGHT = 841;
+
+  //these variables are for the card sizes in millimeters
+  public static final int CARD_FORMAT_WIDTH = 68;
+  public static final int CARD_FORMAT_HEIGHT = 44;
+
+  //these variables are for the size of the card-collage (A2 fits all 45 cards on one page)
+  public static final int CARD_PRINT_WIDTH = 594;
+  public static final int CARD_PRINT_HEIGHT = 420;
 
   //this variable is the real size equivalent of a train from Ticket-To-Ride in millimeters
   public static final float TRAINLENGTH = 26.5f;
@@ -909,6 +919,7 @@ public class MapServiceImpl implements MapService {
     }
     
 
+    //used for generating a graph out of all or only "city" MapPoints of a map
     private Graph<MapPoint, DefaultWeightedEdge> generateGraphFromMap(long id) {
       Graph<MapPoint,DefaultWeightedEdge> graph = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
 
@@ -978,8 +989,13 @@ public class MapServiceImpl implements MapService {
       svgRoot.setAttributeNS(null, "height", String.valueOf(FORMATHEIGHT)+"mm");
 
 
-      //Render the image in maperitive
-      renderMap(map);
+      //create tickets
+      createTicketCards(map.getId());
+
+      //Render the big image in maperitive
+      renderMap(map, FORMATWIDTH);
+
+
 
       //Adding the rendered image to the empty svg
 
@@ -1214,6 +1230,458 @@ public class MapServiceImpl implements MapService {
     return new byte[0];
   }
 
+  private void createTicketCards(Long mapId) {
+    Map map = mapRepository.getReferenceById(mapId);
+
+    //calculate the ratio of the current map
+    float nwX = map.getNorthWestBoundary().x;
+    float seaX = map.getSouthEastBoundary().x;
+
+
+    float mapWidth = calculateDistancesFromCoordinateSystem(nwX, seaX);
+
+    //trainsize calculated off the set values
+    float trainsize = mapWidth * TRAINLENGTH / FORMATWIDTH;
+
+    //make a graph out of the city MapPoints
+    Graph<MapPoint, DefaultWeightedEdge> graph = this.generateGraphFromMap(mapId);
+
+    //Dijkstra for the distances between the MapPoints (equal to the point value of Ticket-Cards)
+    DijkstraShortestPath<MapPoint, DefaultWeightedEdge> dijkstra = new DijkstraShortestPath<>(graph);
+
+
+    Set<MapPoint> citiesSet = graph.vertexSet();
+    List<MapPoint> cities = new ArrayList<>(citiesSet.stream().toList());
+
+    //reduce to only cities
+    cities.removeIf(mapPoint -> !mapPoint.getColor().equals(Colorization.CITY));
+
+    //Cities should only be used up to 4 times
+    java.util.Map<MapPoint, Integer> cityUsedCounter=new HashMap<>();
+
+    for (MapPoint c:
+         cities) {
+      cityUsedCounter.put(c,0);
+
+    }
+
+    java.util.Map<Integer, Integer> pointsUsedCounter = new HashMap<>();
+
+    //Points of ticketcards correspond to Ticket-To-Ride-Europe statistics
+    pointsUsedCounter.put(5, 5);
+    pointsUsedCounter.put(6, 5);
+    pointsUsedCounter.put(7, 5);
+    pointsUsedCounter.put(8, 13);
+    pointsUsedCounter.put(9, 2);
+    pointsUsedCounter.put(10, 5);
+    pointsUsedCounter.put(11, 2);
+    pointsUsedCounter.put(12, 2);
+    pointsUsedCounter.put(13, 1);
+    pointsUsedCounter.put(20, 3);
+    pointsUsedCounter.put(21, 3);
+
+
+    //counter for Tickets
+    int ticketCounter = 0;
+
+    // Create an empty SVG document to merge into
+    SVGDocument mergedDoc = createEmptySVGDocument();
+
+    //Size it to desired Format
+    Element svgRoot = mergedDoc.getRootElement();
+    svgRoot.setAttributeNS(null, "width", String.valueOf(CARD_PRINT_WIDTH)+"mm");
+    svgRoot.setAttributeNS(null, "height", String.valueOf(CARD_PRINT_HEIGHT)+"mm");
+    svgRoot.setAttributeNS(null, "viewBox", "0 0 "+CARD_PRINT_WIDTH+" "+CARD_PRINT_HEIGHT);
+
+    //render a smaller image according to card format
+    renderMap(map, CARD_FORMAT_WIDTH);
+
+    int calcWidth = (int) Math.floor(CARD_FORMAT_WIDTH);
+    int calcHeight = (int) Math.floor(CARD_FORMAT_HEIGHT);
+
+    String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
+    String xlinkNS = "http://www.w3.org/1999/xlink";
+
+    //the image to be embedded to the ticket svg files encoded to base64
+    Path imagePath = Paths.get(maperitivePath, "output", "map" + map.getId().toString() + ".png");
+
+    byte[] imageBytes = new byte[0];
+    try {
+      imageBytes = Files.readAllBytes(imagePath);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+
+    String uri = "data:image/png;base64," + base64Image;
+
+
+    //keep track of used connections
+    List<MapPointConnection> connections = new ArrayList<>();
+
+
+    //ensure each city is used at least once
+    for (MapPoint m:
+        cities) {
+
+      if (ticketCounter < 45) {
+
+        ShortestPathAlgorithm.SingleSourcePaths<MapPoint, DefaultWeightedEdge> pathsFromM = dijkstra.getPaths(m);
+
+
+        for (MapPoint destinationPoint : cities
+        ) {
+          double currentWeight = pathsFromM.getWeight(destinationPoint);
+
+          Integer trainCount = (int) Math.floor(currentWeight / trainsize);
+
+          Integer pointValueTimesUsed = pointsUsedCounter.get(trainCount);
+          if(pointValueTimesUsed == null)
+          {
+            pointValueTimesUsed = 0;
+          }
+
+          if (pointValueTimesUsed > 0) {
+            Integer mTimesUsed = cityUsedCounter.get(m);
+            Integer destinationTimesUsed = cityUsedCounter.get(destinationPoint);
+
+            if (mTimesUsed == 0) {
+              if (destinationTimesUsed == 0) {
+                //update counters
+                pointsUsedCounter.put(trainCount, --pointValueTimesUsed);
+                cityUsedCounter.put(m, ++mTimesUsed);
+                cityUsedCounter.put(destinationPoint, ++destinationTimesUsed);
+                connections.add(new MapPointConnection(m,destinationPoint, trainCount));
+                ticketCounter++;
+
+              }
+              }else {
+                break;
+            }
+          }
+
+
+        }
+      }
+
+    }
+
+
+    //non paired cities ensure they are used once
+    List<MapPoint> nonPaired = new ArrayList<>(cities);
+    for (MapPoint m: nonPaired
+         ) {
+      if (ticketCounter < 45) {
+
+        ShortestPathAlgorithm.SingleSourcePaths<MapPoint, DefaultWeightedEdge> pathsFromM = dijkstra.getPaths(m);
+
+        for (MapPoint destinationPoint : cities
+        ) {
+          double currentWeight = pathsFromM.getWeight(destinationPoint);
+
+          Integer trainCount = (int) Math.floor(currentWeight / trainsize);
+
+          Integer pointValueTimesUsed = pointsUsedCounter.get(trainCount);
+          if (pointValueTimesUsed == null) {
+            pointValueTimesUsed = 0;
+          }
+
+          if (pointValueTimesUsed > 0) {
+            Integer mTimesUsed = cityUsedCounter.get(m);
+            Integer destinationTimesUsed = cityUsedCounter.get(destinationPoint);
+
+            if (mTimesUsed == 0) {
+              if (destinationTimesUsed < 3) {
+                //update counters
+                pointsUsedCounter.put(trainCount, --pointValueTimesUsed);
+                cityUsedCounter.put(m, ++mTimesUsed);
+                cityUsedCounter.put(destinationPoint, ++destinationTimesUsed);
+                connections.add(new MapPointConnection(m, destinationPoint, trainCount));
+                ticketCounter++;
+
+              }
+            } else {
+              break;
+            }
+          }
+
+
+        }
+      }
+    }
+
+
+    //rest of the connections
+    for (MapPoint m:
+         cities) {
+
+      if (ticketCounter < 45) {
+
+        ShortestPathAlgorithm.SingleSourcePaths<MapPoint, DefaultWeightedEdge> pathsFromM = dijkstra.getPaths(m);
+
+
+        for (MapPoint destinationPoint : cities
+        ) {
+          double currentWeight = pathsFromM.getWeight(destinationPoint);
+
+          Integer trainCount = (int) Math.floor(currentWeight / trainsize);
+
+          Integer pointValueTimesUsed = pointsUsedCounter.get(trainCount);
+          if(pointValueTimesUsed == null)
+          {
+            pointValueTimesUsed = 0;
+          }
+
+          if (pointValueTimesUsed > 0) {
+            Integer mTimesUsed = cityUsedCounter.get(m);
+            Integer destinationTimesUsed = cityUsedCounter.get(destinationPoint);
+
+            if (destinationTimesUsed < 3) {
+              if (mTimesUsed < 3) {
+                //check if no duplicates are in the list
+                if(!connections.contains(new MapPointConnection(m, destinationPoint, trainCount)) && !connections.contains(new MapPointConnection(destinationPoint, m, trainCount))) {
+                  //update counters
+                  pointsUsedCounter.put(trainCount, --pointValueTimesUsed);
+                  cityUsedCounter.put(m, ++mTimesUsed);
+                  cityUsedCounter.put(destinationPoint, ++destinationTimesUsed);
+                  connections.add(new MapPointConnection(m, destinationPoint, trainCount));
+                  ticketCounter++;
+                }
+
+              } else {
+                break;
+              }
+            }
+          }
+
+
+        }
+      }
+
+    }
+
+
+    //the saved connections now have to be stored in one file
+    int ticketNumber = 0;
+    for (MapPointConnection mC: connections
+         ) {
+
+      MapPoint m = mC.getSource();
+      MapPoint destinationPoint = mC.getDestination();
+      int trainCount = mC.getShortestPath();
+
+
+      // Create an empty SVG document to merge into
+      SVGDocument ticketMerge = createEmptySVGDocument();
+
+      //Size it to desired Format
+      Element ticketSvgRoot = ticketMerge.getRootElement();
+      ticketSvgRoot.setAttributeNS(null, "width", String.valueOf(CARD_FORMAT_WIDTH) + "mm");
+      ticketSvgRoot.setAttributeNS(null, "height", String.valueOf(CARD_FORMAT_HEIGHT) + "mm");
+      ticketSvgRoot.setAttributeNS(null, "viewBox", "0 0 " + CARD_FORMAT_WIDTH + " " + CARD_FORMAT_HEIGHT);
+
+
+      //Adding the rendered image to the empty svg
+      Element img = ticketMerge.createElementNS(svgNS, "image");
+      img.setAttributeNS(xlinkNS, "xlink:href", uri);
+      img.setAttributeNS(null, "x", "0");
+      img.setAttributeNS(null, "y", "0");
+      img.setAttributeNS(null, "width", String.valueOf(calcWidth));
+      img.setAttributeNS(null, "height", String.valueOf(calcHeight));
+
+      ticketSvgRoot.appendChild(img);
+
+
+      //add indicator circles
+      SVGDocument citySVG = loadSVGDocument("static/cardCircle.svg");
+      SVGDocument destCitySVG = loadSVGDocument("static/cardCircle.svg");
+
+      //alter svg content to match the positioning of MapPoints and their connections
+      Element rootOfCityDoc = citySVG.getRootElement();
+      NodeList cityNodes = rootOfCityDoc.getChildNodes();
+      Element rootOfDestCityDoc = destCitySVG.getRootElement();
+      NodeList destCityNodes = rootOfDestCityDoc.getChildNodes();
+
+      //get position of cities
+      float x = m.getLocation().x;
+      float y = m.getLocation().y;
+      float destx = destinationPoint.getLocation().x;
+      float desty = destinationPoint.getLocation().y;
+
+
+      //calculate the scaling factors for the different coordinate systems
+      float nwY = map.getNorthWestBoundary().y;
+      float seY = map.getSouthEastBoundary().y;
+
+
+      //calculate height of the Map
+      float mapHeight = calculateDistancesFromCoordinateSystem(nwY, seY);
+
+      //get the relative location of the points
+      float relativeY = calculateDistancesFromCoordinateSystem(nwY, y);
+      float relativeX = calculateDistancesFromCoordinateSystem(nwX, x);
+      float relativeDestY = calculateDistancesFromCoordinateSystem(nwY, desty);
+      float relativeDestX = calculateDistancesFromCoordinateSystem(nwX, destx);
+
+
+      //translate them into the coordinate System of the svg
+      double svgX = relativeX * CARD_FORMAT_WIDTH / mapWidth;
+      double svgY = relativeY * CARD_FORMAT_HEIGHT / mapHeight;
+      double svgDestX = relativeDestX * CARD_FORMAT_WIDTH / mapWidth;
+      double svgDestY = relativeDestY * CARD_FORMAT_HEIGHT / mapHeight;
+
+      //control the values to fit the card and fix circle to middle
+      if (svgX > CARD_FORMAT_WIDTH - 10) {
+        svgX = CARD_FORMAT_WIDTH - 10;
+      }
+
+      if (svgY > CARD_FORMAT_HEIGHT - 10) {
+        svgY = CARD_FORMAT_HEIGHT - 10;
+      }
+
+      if (svgDestX > CARD_FORMAT_WIDTH - 10) {
+        svgDestX = CARD_FORMAT_WIDTH - 10;
+      }
+
+      if (svgDestY > CARD_FORMAT_HEIGHT - 10) {
+        svgDestY = CARD_FORMAT_HEIGHT - 10;
+      }
+
+      String cityTransformation = "translate(" + svgX + ", " + svgY + ")";
+
+      for (int i = 0; i < cityNodes.getLength(); i++) {
+        Node childNode = cityNodes.item(i);
+
+        if (childNode instanceof SVGOMElement) {
+          SVGOMElement childElement = (SVGOMElement) childNode;
+          childElement.setAttribute("transform", cityTransformation);
+        }
+      }
+
+      appendSVGContent(ticketMerge, citySVG);
+
+      String cityDestTransformation = "translate(" + svgDestX + ", " + svgDestY + ")";
+
+      for (int i = 0; i < destCityNodes.getLength(); i++) {
+        Node childNode = destCityNodes.item(i);
+
+        if (childNode instanceof SVGOMElement) {
+          SVGOMElement childElement = (SVGOMElement) childNode;
+          childElement.setAttribute("transform", cityDestTransformation);
+        }
+      }
+
+      appendSVGContent(ticketMerge, destCitySVG);
+
+
+      //append the ticketCard svg with updated texts
+      SVGDocument ticketSvg = loadSVGDocument("static/ticketCard.svg");
+
+      //change the city text value
+      Element cityText = ticketSvg.getElementById("cityText");
+      Element cityText2 = ticketSvg.getElementById("cityText2");
+      String cityConnection = m.getName() + " - " + destinationPoint.getName();
+      if(cityConnection.length() > 20)
+      {
+        cityText.setTextContent(m.getName() + " -");
+        cityText2.setTextContent(destinationPoint.getName());
+      } else {
+        cityText.setTextContent(cityConnection);
+        cityText2.setTextContent("");
+      }
+
+      //change the counter value
+      Element counterText = ticketSvg.getElementById("counterText");
+      counterText.setTextContent(String.valueOf(ticketNumber+1));
+
+      //change point value
+      Element pointText = ticketSvg.getElementById("pointText");
+      pointText.setTextContent(String.valueOf(trainCount));
+
+      appendSVGContent(ticketMerge, ticketSvg);
+
+      //calculate how many cards are in each row
+      int cardPerRow = CARD_PRINT_WIDTH / CARD_FORMAT_WIDTH;
+      //calculate the position of the ticket
+      double xOffset = ticketNumber % cardPerRow * CARD_FORMAT_WIDTH;
+      double yOffset = (ticketNumber / cardPerRow) * CARD_FORMAT_HEIGHT;
+
+      Element rootOfDoc = ticketMerge.getRootElement();
+      NodeList nodes = rootOfDoc.getChildNodes();
+
+      //append the ticket to the overall ticket svg
+      String transformation;
+
+      for (int i = 0; i < nodes.getLength(); i++) {
+        Node childNode = nodes.item(i);
+
+        if (childNode instanceof SVGOMElement) {
+          SVGOMElement childElement = (SVGOMElement) childNode;
+          if (i >= 1 && i <= 8) {
+            transformation = "translate(" + (xOffset + svgX) + ", " + (yOffset + svgY) + ")";
+          } else if (i > 8 && i <= 17) {
+            transformation = "translate(" + (xOffset + svgDestX) + ", " + (yOffset + svgDestY) + ")";
+          } else {
+            transformation = "translate(" + xOffset + ", " + yOffset + ")";
+          }
+          childElement.setAttribute("transform", transformation);
+        }
+      }
+
+
+      appendSVGContent(mergedDoc, ticketMerge);
+      ticketNumber++;
+    }
+
+    saveSVGDocument(mergedDoc, "tickets.svg");
+    convertSVGtoPDF(mergedDoc, "tickets.pdf");
+
+
+  }
+
+  //used for easier management in the creation of TicketCards
+  private class MapPointConnection{
+    private MapPoint source;
+    private MapPoint destination;
+
+    private int shortestPath;
+
+    public MapPointConnection(MapPoint source, MapPoint destination, int shortestPath) {
+      this.source = source;
+      this.destination = destination;
+      this.shortestPath = shortestPath;
+    }
+
+    public MapPoint getSource() {
+      return source;
+    }
+
+    public MapPoint getDestination() {
+      return destination;
+    }
+
+    public int getShortestPath() {
+      return shortestPath;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      MapPointConnection that = (MapPointConnection) o;
+      return shortestPath == that.shortestPath && Objects.equals(source, that.source) && Objects.equals(destination, that.destination);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(source, destination, shortestPath);
+    }
+  }
+
   //this method allows us to calculate Distances from two points of our geographical coordinate System.
   //This method should include all the special cases where the points are not in the same quadrant of the graph
   private float calculateDistancesFromCoordinateSystem(float origin, float distanceToOrigin) {
@@ -1304,8 +1772,8 @@ public class MapServiceImpl implements MapService {
     }
   }
 
-  //render the background image of the map through maperitive
-  private void renderMap(Map map)
+  //render the background image of the map through maperitive with set formatWidth
+  private void renderMap(Map map, int formatWidth)
   {
 
     // getting boundingBox values
@@ -1322,13 +1790,16 @@ public class MapServiceImpl implements MapService {
 
     Long id = map.getId();
 
-    int calcWidth = (int) Math.floor(FORMATWIDTH * DPI / INCH_IN_MILLIMETERS);
+    int calcWidth = (int) Math.floor(formatWidth * DPI / INCH_IN_MILLIMETERS);
 
     // create a maperitive script for automatic rendering
     String scriptContent = String.format(Locale.US,
         "zoom-bounds bounds=%.15f,%.15f,%.15f,%.15f\n" +
             "set-print-bounds-geo bounds=%.15f,%.15f,%.15f,%.15f\n" +
-            "export-bitmap width=%d file="+maperitivePath+"/output/map%d.png",
+            "export-bitmap width=%d file="+maperitivePath+"/output/map%d.png\n" +
+            "set-setting name=map.decoration.grid value=false\n" +
+            "set-setting name=map.decoration.scale value=false\n" +
+            "set-setting name=map.decoration.attribution value=false",
         minLong,minLat,maxLong,maxLat,
         minLong,minLat,maxLong,maxLat,
         calcWidth, id

@@ -22,6 +22,6 @@
 	
 	
 	<!-- Centered text element -->
-	<text text-anchor="middle" alignment-baseline="middle" fill="black" id="textElement">Your Text Here</text>
+	<text text-anchor="middle" alignment-baseline="middle" fill="black" font-family="Arial" id="textElement">Your Text Here</text>
 </g>
 </svg>
