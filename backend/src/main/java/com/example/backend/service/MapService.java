@@ -5,6 +5,7 @@ import java.util.List;
 import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
 import com.example.backend.endpoint.dto.MapPointDto;
+import com.example.backend.endpoint.dto.PDFDto;
 
 public interface MapService {
 
@@ -79,11 +80,19 @@ public interface MapService {
     List<MapPointDto> getMapPoints(Long id);
 
   /**
-   * Gets / Creates the GameBoard for a saved Map and its corresponding MapPoints
+   * Creates the GameBoard and TicketCards for a saved Map and its corresponding MapPoints
    *
    * @param id of the Map
-   * @return a printable Version of the GameBoard
+   * @return a PDFDto containing the GameBoard and its corresponding TicketCards
    */
-  byte[] getGameBoard(Long id);
+  PDFDto createGameBoard(Long id);
+
+   /**
+   * Gets the GameBoard and Tickets as a PDFDto from as saved Map
+   *
+   * @param id of the Map
+   * @return a PDFDto containing the GameBoard and its corresponding TicketCards
+   */
+  PDFDto getGameBoard(Long id);
 
 }

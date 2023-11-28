@@ -4,6 +4,7 @@ import {MapDto} from '../dtos/map';
 import {Observable} from "rxjs";
 import {City} from "../dtos/city";
 import {MapPointDto} from "../dtos/map-point";
+import {PDFDto} from "../dtos/pdf";
 
 @Injectable({
   providedIn: 'root'
@@ -93,5 +94,29 @@ export class MapService {
    */
   getMapPoints(id: number): Observable<MapPointDto[]> {
     return this.httpClient.get<MapPointDto[]>(this.baseURI + '/maps/mapPoints/' + id);
+  }
+
+  /**
+   *
+   * creates the gameBoard and its ticketCards of a certain map
+   *
+   * @param id of map saved on server
+   *
+   * @returns a PDFDto containing gameBoard and ticketCards of the map
+   */
+  createGameBoard(id: number): Observable<PDFDto> {
+    return this.httpClient.get<PDFDto>(this.baseURI + '/maps/gameBoard/create/'+id);
+  }
+
+  /**
+   *
+   * gets the gameBoard and its ticketCards of a certain map
+   *
+   * @param id of map saved on server
+   *
+   * @returns a PDFDto containing gameBoard and ticketCards of the map
+   */
+  getGameBoard(id: number): Observable<PDFDto> {
+    return this.httpClient.get<PDFDto>(this.baseURI + '/maps/gameBoard/'+id);
   }
 }

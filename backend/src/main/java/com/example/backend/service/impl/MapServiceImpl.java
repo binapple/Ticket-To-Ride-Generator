@@ -3,6 +3,7 @@ package com.example.backend.service.impl;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -35,6 +36,7 @@ import java.util.Set;
 import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
 import com.example.backend.endpoint.dto.MapPointDto;
+import com.example.backend.endpoint.dto.PDFDto;
 import com.example.backend.endpoint.mapper.CityMapper;
 import com.example.backend.endpoint.mapper.MapMapper;
 import com.example.backend.endpoint.mapper.MapPointMapper;
@@ -968,7 +970,7 @@ public class MapServiceImpl implements MapService {
     }
 
   @Override
-  public byte[] getGameBoard(Long id) {
+  public PDFDto createGameBoard(Long id) {
 
     Map map = mapRepository.getReferenceById(id);
 
@@ -999,7 +1001,7 @@ public class MapServiceImpl implements MapService {
       createTicketCards(map.getId());
 
       //Render the big image in maperitive
-      renderMap(map, FORMATWIDTH);
+      //renderMap(map, FORMATWIDTH);
 
 
 
@@ -1051,7 +1053,8 @@ public class MapServiceImpl implements MapService {
           while (currentMP.getColor() != Colorization.CITY) {
 
             //remove already visited MP from neighbor Set
-            Set<MapPoint> findNextMP = currentMP.getNeighbors();
+            Set<MapPoint> currentMPNeighbors = currentMP.getNeighbors();
+            List<MapPoint> findNextMP = new ArrayList<>(currentMPNeighbors);
             findNextMP.removeAll(alreadyDrawn);
 
             //get the next MP
@@ -1233,7 +1236,42 @@ public class MapServiceImpl implements MapService {
 
     }
 
-    return new byte[0];
+    //save the gameboard to persistence
+    File gameBoard = new File("merged.pdf");
+
+    try {
+      byte[] gameBoardBytes = Files.readAllBytes(gameBoard.toPath());
+
+      map.setGameBoard(gameBoardBytes);
+      mapRepository.save(map);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    //create PDFDto to return
+    PDFDto pdfDto = new PDFDto();
+    pdfDto.setGameBoard(map.getGameBoard());
+    pdfDto.setTicketCards(map.getTicketCards());
+    pdfDto.setId(map.getId());
+
+    return pdfDto;
+  }
+
+  @Override
+  public PDFDto getGameBoard(Long id) {
+
+    Map map = mapRepository.getReferenceById(id);
+
+    PDFDto pdfDto = new PDFDto();
+    if(map != null) {
+
+      pdfDto.setId(map.getId());
+      pdfDto.setGameBoard(map.getGameBoard());
+      pdfDto.setTicketCards(map.getTicketCards());
+    }
+
+    return pdfDto;
+
   }
 
   private void createTicketCards(Long mapId) {
@@ -1300,7 +1338,7 @@ public class MapServiceImpl implements MapService {
     svgRoot.setAttributeNS(null, "viewBox", "0 0 "+CARD_PRINT_WIDTH+" "+CARD_PRINT_HEIGHT);
 
     //render a smaller image according to card format
-    renderMap(map, CARD_FORMAT_WIDTH);
+    //renderMap(map, CARD_FORMAT_WIDTH);
 
     int calcWidth = (int) Math.floor(CARD_FORMAT_WIDTH);
     int calcHeight = (int) Math.floor(CARD_FORMAT_HEIGHT);
@@ -1642,6 +1680,16 @@ public class MapServiceImpl implements MapService {
     saveSVGDocument(mergedDoc, "tickets.svg");
     convertSVGtoPDF(mergedDoc, "tickets.pdf");
 
+    //save the tickets to persistence
+    File ticketCards = new File("tickets.pdf");
+
+    try {
+      byte[] ticketCardsBytes = Files.readAllBytes(ticketCards.toPath());
+      map.setTicketCards(ticketCardsBytes);
+      mapRepository.save(map);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
 
   }
 
@@ -1746,7 +1794,7 @@ public class MapServiceImpl implements MapService {
 
   }
 
-  //the document has to be saved somewhere TODO: save svg to the map in persistence
+  //the document has to be saved somewhere
   private static void saveSVGDocument(SVGDocument svgDocument, String outputFileName) {
     try {
       SVGGeneratorContext ctx = SVGGeneratorContext.createDefault(svgDocument);

@@ -196,7 +196,6 @@ try {
   }
 
   private List<MapPoint> createConnection(MapPoint mP1, MapPoint mP2) {
-    //TODO update according to changes in MapService
     //List containing new MapPoints
     List<MapPoint> newMapPoints  = new ArrayList<>();
 

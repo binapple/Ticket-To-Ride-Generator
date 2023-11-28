@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import {MapComponent} from './components/map/map.component';
 import {SelectedMapComponent} from "./components/selected-map/selected-map.component";
 import {ColoredMapComponent} from "./components/colored-map/colored-map.component";
+import {GameBoardComponent} from "./components/game-board/game-board.component";
 
 const routes: Routes = [
   { path: '', redirectTo: '/map', pathMatch: 'full' },
@@ -13,6 +14,9 @@ const routes: Routes = [
         ] },
       { path: 'colorized', children: [
           { path: ':id', component: ColoredMapComponent }
+        ] },
+      { path: 'gameBoard', children: [
+          { path: ':id', component: GameBoardComponent }
         ] }
     ] }
 ];

@@ -289,4 +289,13 @@ export class ColoredMapComponent implements OnInit {
       )
     }
   }
+
+  getGameBoard() {
+    this.mapService.getGameBoard(this.savedMap.id).subscribe({
+      next: data => {
+        this.router.navigate(['/map/gameBoard/'+this.savedMap.id], {state:{data: data}})
+      }
+    });
+
+  }
 }

@@ -29,6 +29,15 @@ public class Map {
 
   @Column(columnDefinition = "integer default 5")
   private int zoom;
+
+  @Lob
+  @Column(name = "gameBoard", columnDefinition = "BLOB")
+  private byte[] gameBoard;
+
+  @Lob
+  @Column(name = "ticketCards", columnDefinition = "BLOB")
+  private byte[] ticketCards;
+
   @ManyToMany
   @JoinTable(
       name = "map_city",
@@ -120,5 +129,21 @@ public class Map {
 
   public void setCenter(Point2D.Float center) {
     this.center = center;
+  }
+
+  public byte[] getGameBoard() {
+    return gameBoard;
+  }
+
+  public void setGameBoard(byte[] gameBoard) {
+    this.gameBoard = gameBoard;
+  }
+
+  public byte[] getTicketCards() {
+    return ticketCards;
+  }
+
+  public void setTicketCards(byte[] ticketCards) {
+    this.ticketCards = ticketCards;
   }
 }

@@ -12,6 +12,7 @@ import {SearchCityPipe} from "./components/selected-map/search-city.pipe";
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ColoredMapComponent } from './components/colored-map/colored-map.component';
 import { MapPointEditModalComponent } from './components/colored-map/map-point-edit-modal/map-point-edit-modal.component';
+import { GameBoardComponent } from './components/game-board/game-board.component';
 
 
 @NgModule({
@@ -21,7 +22,8 @@ import { MapPointEditModalComponent } from './components/colored-map/map-point-e
     SelectedMapComponent,
     SearchCityPipe,
     ColoredMapComponent,
-    MapPointEditModalComponent
+    MapPointEditModalComponent,
+    GameBoardComponent
 
   ],
   imports: [

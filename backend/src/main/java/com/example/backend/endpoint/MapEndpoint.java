@@ -6,6 +6,7 @@ import java.util.List;
 import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
 import com.example.backend.endpoint.dto.MapPointDto;
+import com.example.backend.endpoint.dto.PDFDto;
 import com.example.backend.service.MapService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -105,11 +106,26 @@ public class MapEndpoint {
     return cityDtoList;
   }
 
+  @GetMapping (value = "/gameBoard/create/{id}")
+  @CrossOrigin (origins = "http://localhost:4200")
+  @ResponseStatus(HttpStatus.OK)
+  public PDFDto createGameBoard(@PathVariable Long id) {
+  return mapService.createGameBoard(id);
+  }
+
   @GetMapping (value = "/gameBoard/{id}")
   @CrossOrigin (origins = "http://localhost:4200")
   @ResponseStatus(HttpStatus.OK)
-  public @ResponseBody byte[] getGameBoard(@PathVariable Long id) {
-  return mapService.getGameBoard(id);
+  public PDFDto getGameBoard(@PathVariable Long id) {
+
+    PDFDto pdfDto = mapService.getGameBoard(id);
+
+    if(pdfDto.getGameBoard() == null || pdfDto.getTicketCards() == null || pdfDto.getId() == null)
+    {
+      pdfDto = mapService.createGameBoard(id);
+    }
+
+    return pdfDto;
   }
 
 }
