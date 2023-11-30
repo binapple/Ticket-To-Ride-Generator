@@ -53,6 +53,14 @@ export class ColoredMapComponent implements OnInit {
   //used for new connections
   cityMapPoints: MapPointDto[] = [];
 
+  //used for loading indicator
+  loadingGameBoard = false;
+  creatingConnection = false;
+
+  //progress bar
+  currentStep = 3;
+  progressWidth = 75;
+
   constructor(private route: ActivatedRoute,
               private mapService: MapService,
               private mapPointService: MapPointService,
@@ -266,7 +274,15 @@ export class ColoredMapComponent implements OnInit {
   }
 
   createConnection() {
-    this.drawMapPoints(true);
+    if(!this.creatingConnection) {
+      this.creatingConnection = true;
+      this.drawMapPoints(true);
+    }
+    else {
+      this.creatingConnection = false;
+      this.cityMapPoints = [];
+      this.drawMapPoints(false);
+    }
   }
 
   private cityClick(mp: MapPointDto) {
@@ -283,6 +299,7 @@ export class ColoredMapComponent implements OnInit {
           next: data => {
             this.mapPoints.concat(data);
             this.cityMapPoints = [];
+            this.creatingConnection = false;
             this.getMapPoints(this.savedMap.id);
           }
         }
@@ -291,8 +308,10 @@ export class ColoredMapComponent implements OnInit {
   }
 
   getGameBoard() {
+    this.loadingGameBoard = true;
     this.mapService.getGameBoard(this.savedMap.id).subscribe({
       next: data => {
+        this.loadingGameBoard = false;
         this.router.navigate(['/map/gameBoard/'+this.savedMap.id], {state:{data: data}})
       }
     });

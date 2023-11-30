@@ -1,10 +1,12 @@
 import {Component, OnInit} from '@angular/core';
 import {MapDto} from "../../dtos/map";
 import {Point2D} from "../../dtos/point2d";
-import {ActivatedRoute} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 import {PDFDto} from "../../dtos/pdf";
 import {DomSanitizer, SafeResourceUrl} from "@angular/platform-browser";
 import {MapService} from "../../services/map.service";
+import {Browser} from "leaflet";
+import win = Browser.win;
 
 @Component({
   selector: 'app-game-board',
@@ -19,9 +21,22 @@ export class GameBoardComponent implements OnInit{
   gameBoardSource: any;
   ticketCardsSource: any;
 
+  //progress bar
+  currentStep = 4;
+  progressWidth = 100;
+
+  //blob URLs
+  gameBoardBlobURL: any;
+  ticketCardsBlobURL: any;
+
+  //check if blobs are loaded
+  gameBoardBlobLoaded = false;
+  ticketCardsBlobLoaded = false;
+
   constructor(private route: ActivatedRoute,
               private sanitizer: DomSanitizer,
-              private mapService: MapService
+              private mapService: MapService,
+              private router: Router
   )
   {}
 
@@ -40,8 +55,23 @@ export class GameBoardComponent implements OnInit{
     this.pdfDto = history.state.data;
 
     if(this.pdfDto !== undefined) {
+      console.log(this.pdfDto)
       const gameBoardFileURL = 'data:application/pdf;base64,' + this.pdfDto.gameBoard;
       const ticketCardsFileURL = 'data:application/pdf;base64, '+ this.pdfDto.ticketCards;
+
+      let gameBlob: any;
+      fetch(gameBoardFileURL).then(res => res.blob()).then(b => { gameBlob = b;}).then(() => {
+        this.gameBoardBlobURL = URL.createObjectURL(gameBlob);
+        this.gameBoardBlobLoaded = true;
+
+      });
+
+      let ticketBlob: any;
+      fetch(ticketCardsFileURL).then(res => res.blob()).then(b => { ticketBlob = b;}).then(() => {
+        this.ticketCardsBlobURL = URL.createObjectURL(ticketBlob);
+        this.ticketCardsBlobLoaded = true;
+
+      });
 
       const gameBoardFileURLSanitized = this.sanitizer.bypassSecurityTrustResourceUrl(gameBoardFileURL);
       const ticketCardsFileURLSanitized = this.sanitizer.bypassSecurityTrustResourceUrl(ticketCardsFileURL);
@@ -71,6 +101,20 @@ export class GameBoardComponent implements OnInit{
             const gameBoardFileURL = 'data:application/pdf;base64,' + this.pdfDto.gameBoard;
             const ticketCardsFileURL = 'data:application/pdf;base64, '+ this.pdfDto.ticketCards;
 
+            let gameBlob: any;
+            fetch(gameBoardFileURL).then(res => res.blob()).then(b => { gameBlob = b;}).then(() => {
+              this.gameBoardBlobURL = URL.createObjectURL(gameBlob);
+              this.gameBoardBlobLoaded = true;
+
+            });
+
+            let ticketBlob: any;
+            fetch(ticketCardsFileURL).then(res => res.blob()).then(b => { ticketBlob = b;}).then(() => {
+              this.ticketCardsBlobURL = URL.createObjectURL(ticketBlob);
+              this.ticketCardsBlobLoaded = true;
+
+            });
+
             const gameBoardFileURLSanitized = this.sanitizer.bypassSecurityTrustResourceUrl(gameBoardFileURL);
             const ticketCardsFileURLSanitized = this.sanitizer.bypassSecurityTrustResourceUrl(ticketCardsFileURL);
 
@@ -80,6 +124,10 @@ export class GameBoardComponent implements OnInit{
         }
       }
     )
+  }
+
+  backButton() {
+    this.router.navigate(['map/']);
   }
 
 }

@@ -1,15 +1,11 @@
 <div class="modal-header">
   <h4 class="modal-title">Edit MapPoint</h4>
-  <button type="button" class="close" aria-label="Close" (click)="closeModal()">
-    <span aria-hidden="true">&times;</span>
+  <button type="button" class="close btn" aria-label="Close" (click)="closeModal()">
+    <span aria-hidden="true"><i class="bi bi-x-circle"></i></span>
   </button>
 </div>
 <div class="modal-body">
   <form (ngSubmit)="saveChanges()">
-    <div class="form-group">
-      <label for="name">Name</label>
-      <input type="text" class="form-control" id="name" name="name" [(ngModel)]="mapPoint.name">
-    </div>
     <div class="form-group">
       <label for="locationY">Location (Latitude, Longitude)</label>
       <div class="input-group">

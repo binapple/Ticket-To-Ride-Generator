@@ -1,3 +1,28 @@
+<div class="card">
+  <div class="card-body">
 
-<iframe id="pdfViewer1" width="100%" height="500px" [src]="gameBoardSource"></iframe>
-<iframe id="pdfViewer2" width="100%" height="500px" [src]="ticketCardsSource"></iframe>
+    <!-- Progress Bar -->
+    <div class="progress mb-3">
+      <div class="progress-bar bg-success" role="progressbar" [style.width]="progressWidth + '%'" [attr.aria-valuenow]="currentStep" aria-valuemin="0" aria-valuemax="100">
+        Your finished Game Board and Ticket Cards!
+      </div>
+    </div>
+
+    <div class="row">
+
+      <div class="col-12">
+        <button (click)="backButton()" class="btn btn-outline-primary mx-1">Back to Map selection</button>
+        <a *ngIf="gameBoardBlobLoaded" [href]="gameBoardBlobURL" target="_blank" class="btn btn-outline-success mx-1">Open GameBoard-PDF</a>
+        <a *ngIf="ticketCardsBlobLoaded" [href]="ticketCardsBlobURL" target="_blank" class="btn btn-outline-success mx-1">Open TicketCards-PDF</a>
+      </div>
+
+      <!-- PDF Viewers -->
+      <div class="col-12">
+        PDFs as a preview (not every browser supports embedded PDFs with big file sizes)
+        <iframe id="pdfViewer1" style="width: 100%; height: 50vh;" [src]="gameBoardSource"></iframe>
+        <iframe id="pdfViewer2" style="width: 100%; height: 50vh;" [src]="ticketCardsSource"></iframe>
+      </div>
+
+    </div>
+  </div>
+</div>

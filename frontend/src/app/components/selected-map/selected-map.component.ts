@@ -53,6 +53,15 @@ export class SelectedMapComponent implements OnInit{
   searchCity: City = new City('',0,new Point2D(0,0));
   citiesLoaded = false;
 
+  //used for loading indicators
+  loadingCities = false;
+  loadingTowns = false;
+  loadingColorization = false;
+
+  //progress bar
+  currentStep = 2;
+  progressWidth = 50;
+
   constructor(private route : ActivatedRoute,
               private mapService : MapService,
               private router: Router,
@@ -105,6 +114,7 @@ export class SelectedMapComponent implements OnInit{
 
   loadCities() {
     if (this.savedMap.id != null) {
+      this.loadingCities = true;
 
       this.mapService.getMapPoints(this.savedMap.id).subscribe(
         {
@@ -120,6 +130,7 @@ export class SelectedMapComponent implements OnInit{
                   }
                   else
                   {
+                    this.selectedCities = [];
                     this.mapPoints.forEach(mp => {
                       if(mp.color === Colorization.CITY) {
                         const selectedCity = this.cities.find(city=>city.name == mp.name);
@@ -136,6 +147,7 @@ export class SelectedMapComponent implements OnInit{
                   }
                   this.addCitiesToMap();
                   this.loadMapPoints();
+                  this.loadingCities = false;
                   this.citiesLoaded = true;
                 }
               });
@@ -226,6 +238,7 @@ export class SelectedMapComponent implements OnInit{
 
   loadTowns() {
     if (this.savedMap.id != null) {
+      this.loadingTowns = true;
       this.mapService.getTowns(this.savedMap.id).subscribe({
         next: data => {
           this.cities = data;
@@ -234,6 +247,7 @@ export class SelectedMapComponent implements OnInit{
           this.layers = [];
           this.addCitiesToMap();
           this.loadMapPoints();
+          this.loadingTowns = false;
         }
       })
     }
@@ -287,9 +301,11 @@ export class SelectedMapComponent implements OnInit{
   }
 
   colorMap() {
+    this.loadingColorization = true;
     this.mapService.colorizeMapPoints(this.savedMap.id, this.selectedCities).subscribe({
       next: data => {
         this.mapPoints = data;
+        this.loadingColorization = false;
         this.router.navigate(['/map/colorized/'+this.savedMap.id], {state:{data: this.mapPoints}})
       }
     });

@@ -1,49 +1,56 @@
 <div class="card">
   <div class="card-body">
 
-
-
-
-
-  </div>
-  <div class="card-body">
+    <!-- Progress Bar -->
+    <div class="progress mb-3">
+      <div class="progress-bar" role="progressbar" [style.width]="progressWidth + '%'" [attr.aria-valuenow]="currentStep" aria-valuemin="0" aria-valuemax="100">
+        Choose your Map
+      </div>
+    </div>
 
     <div class="row">
 
+      <!-- Map -->
+      <div class="col-12 mb-3 text-center">
+        <div
+          leaflet
+          style="height: 0; padding-bottom: calc(100% / 1.41421); width: 100%;"
+          [leafletOptions]="options"
+          [leafletZoom]="zoom"
+          (leafletZoomChange)="onZoomChange($event)"
+          [leafletCenter]="center"
+          (leafletCenterChange)="onCenterChange($event)"
+          (leafletMapReady)="onMapReady($event)"
+        >
+        </div>
+      </div>
+
       <!-- Control Form -->
-      <div class="col-sm-12 col-md-6 col-lg-4">
-
+      <div class="col col-md-6 col-lg-4">
+        <div class="col-12 mb-3">
+          Pan and zoom on the map until it fits! <br>
+        You can also manually enter a center for the map:
+        </div>
         <form>
-
           <!-- Zoom Levels -->
           <div class="form-group row">
-            <div class="col-4">
-              <label class="col-form-label float-right">
-                Zoom
-              </label>
-            </div>
+            <label class="col-4 col-form-label text-right">Zoom</label>
             <div class="col">
               <select class="form-control" name="zoom" [(ngModel)]="formZoom" required>
-                <option *ngFor="let z of zoomLevels" [value]="z">{{z}}</option>
+                <option *ngFor="let z of zoomLevels" [value]="z">{{ z }}</option>
               </select>
             </div>
           </div>
 
           <!-- Lat/Long -->
           <div class="form-group row">
-            <div class="col-4">
-              <label class="col-form-label float-right">Latitude</label>
-            </div>
+            <label class="col-4 col-form-label text-right">Latitude</label>
             <div class="col">
               <input type="text" class="form-control" name="lat" [(ngModel)]="lat" required>
             </div>
           </div>
           <div class="form-group row">
-            <div class="col-4">
-              <label class="col-form-label float-right">
-                Longitude
-              </label>
-            </div>
+            <label class="col-4 col-form-label text-right">Longitude</label>
             <div class="col">
               <input type="text" class="form-control" name="lng" [(ngModel)]="lng" required>
             </div>
@@ -52,39 +59,14 @@
           <div class="form-group row">
             <div class="col offset-4">
               <div class="clearfix">
-                <button type="button"
-                        class="btn btn-primary"
-                        (click)="doApply()">Apply</button>
+                <button type="button" class="btn btn-outline-primary" (click)="doApply()">Apply Form Values</button>
               </div>
             </div>
           </div>
         </form>
-
       </div>
-<br>
-      <!-- Map -->
-      <div class="">
-
-        <div leaflet
-             style="height: calc(80vw/1.41421); width: 80vw;margin: auto"
-             [leafletOptions]="options"
-             [leafletZoom]="zoom"
-             (leafletZoomChange)="onZoomChange($event)"
-             [leafletCenter]="center"
-             (leafletCenterChange)="onCenterChange($event)"
-             (leafletMapReady)="onMapReady($event)"
-             >
-        </div>
-
-      </div>
-
-      <button (click)="selectedMap()">Use this Map!</button>
 
     </div>
-
+    <button (click)="selectedMap()" class="btn btn-success col-12 mt-3">Use this Map!</button>
   </div>
 </div>
-
-
-
-

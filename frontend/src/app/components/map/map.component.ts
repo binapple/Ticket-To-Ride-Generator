@@ -40,6 +40,9 @@ export class MapComponent {
   emptyPoint: Point2D = new Point2D(0,0);
   savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0);
 
+  //progress bar
+  currentStep = 1;
+  progressWidth = 25;
 
   constructor(private router : Router,
               private mapService: MapService) {

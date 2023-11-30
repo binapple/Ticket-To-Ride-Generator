@@ -1001,7 +1001,7 @@ public class MapServiceImpl implements MapService {
       createTicketCards(map.getId());
 
       //Render the big image in maperitive
-      //renderMap(map, FORMATWIDTH);
+      renderMap(map, FORMATWIDTH);
 
 
 
@@ -1338,7 +1338,7 @@ public class MapServiceImpl implements MapService {
     svgRoot.setAttributeNS(null, "viewBox", "0 0 "+CARD_PRINT_WIDTH+" "+CARD_PRINT_HEIGHT);
 
     //render a smaller image according to card format
-    //renderMap(map, CARD_FORMAT_WIDTH);
+    renderMap(map, CARD_FORMAT_WIDTH);
 
     int calcWidth = (int) Math.floor(CARD_FORMAT_WIDTH);
     int calcHeight = (int) Math.floor(CARD_FORMAT_HEIGHT);
@@ -1656,6 +1656,7 @@ public class MapServiceImpl implements MapService {
       //append the ticket to the overall ticket svg
       String transformation;
 
+      //this step is necessary to move the circle indicators with the offset + their position on the card itself
       for (int i = 0; i < nodes.getLength(); i++) {
         Node childNode = nodes.item(i);
 
