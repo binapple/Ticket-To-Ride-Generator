@@ -9,6 +9,7 @@ import {Colorization} from "../../dtos/colorization";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {MapPointEditModalComponent} from "./map-point-edit-modal/map-point-edit-modal.component";
 import {MapPointService} from "../../services/map-point.service";
+import {dateComparator} from "@ng-bootstrap/ng-bootstrap/datepicker/datepicker-tools";
 
 @Component({
   selector: 'app-colored-map',
@@ -61,6 +62,22 @@ export class ColoredMapComponent implements OnInit {
   currentStep = 3;
   progressWidth = 75;
 
+  //drag mapPoints
+  activeMapPoint: MapPointDto = {
+    color: Colorization.CITY,
+    connectionIssue: false,
+    hasJoker: false,
+    hasTunnel: false,
+    id: 0,
+    isDrawn: false,
+    location: {
+      x: 0,
+      y: 0,
+    },
+    name: "",
+    neighbors: []
+  };
+
   constructor(private route: ActivatedRoute,
               private mapService: MapService,
               private mapPointService: MapPointService,
@@ -112,6 +129,9 @@ export class ColoredMapComponent implements OnInit {
 
   onMapReady(mapL: L.Map): void {
     this.mapL = mapL;
+    this.mapL.on('mouseup',function(e){
+      mapL.removeEventListener('mousemove');
+    })
   }
 
   drawMapPoints(drawOnlyCityCircles: boolean) {
@@ -206,6 +226,21 @@ export class ColoredMapComponent implements OnInit {
                 }
               );
 
+              newCircle.on({
+                mousedown: e => {
+                  this.zone.run(() => {this.mapL.on('mousemove', function (e) {
+                    newCircle.setLatLng(e.latlng);
+                  });
+                   // this.circleDrag(mp.id, newCircle.getLatLng());
+                  });
+                },
+                mouseup: event => {
+                  this.zone.run( () => {
+                    this.circleDrag(mp.id, newCircle.getLatLng());
+                  })
+                }
+              });
+
               this.layers.push(newCircle);
 
             }
@@ -222,7 +257,7 @@ export class ColoredMapComponent implements OnInit {
             }
             else {
               const radius = (Math.abs(this.savedMap.northEastBoundary.x - this.savedMap.southWestBoundary.x)) * 10 / 1189;
-              const newCircle = circle(circleLatLng, radius * 1000, {color: '#d94e4e'}).on("dblclick",
+              const newCircle = circle(circleLatLng, radius * 1000,{color: '#d94e4e'}).on("dblclick",
 
                 e => {
                   this.zone.run(() => this.cityClick(mp));
@@ -271,6 +306,27 @@ export class ColoredMapComponent implements OnInit {
       }
     });
 
+  }
+
+  circleDrag(id: number, latLng: LatLng) {
+    this.mapPointService.getMapPoint(id).subscribe(
+      {
+        next: data => {
+          this.activeMapPoint = data;
+
+          this.activeMapPoint.location.x = latLng.lng;
+          this.activeMapPoint.location.y = latLng.lat;
+          this.mapPointService.updateMapPoint(this.activeMapPoint).subscribe(
+            {
+              next: data => {
+                this.activeMapPoint = data;
+                this.getMapPoints(this.savedMap.id);
+              }
+            }
+          )
+        }
+      }
+    )
   }
 
   createConnection() {
