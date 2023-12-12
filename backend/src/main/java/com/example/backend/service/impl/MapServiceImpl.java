@@ -1131,22 +1131,29 @@ public class MapServiceImpl implements MapService {
                 float nwY = map.getNorthWestBoundary().y;
                 float seY = map.getSouthEastBoundary().y;
 
+                //calculate the size of the board in pixels
+                double width = FORMATWIDTH*SVGMMCONSTANT;
+                double height = FORMATHEIGHT*SVGMMCONSTANT;
 
-                //calculate width and height of the Map
-                float mapWidth = calculateDistancesFromCoordinateSystem(nwX, seaX);
-                float mapHeight = calculateDistancesFromCoordinateSystem(nwY, seY);
+                double mapLonLeft = nwX;
+                double mapLonRight = seaX;
 
-                //get the relative location of the points
-                float relativeY = calculateDistancesFromCoordinateSystem(nwY, y);
-                float relativeX = calculateDistancesFromCoordinateSystem(nwX, x);
-                float relativeNextX = calculateDistancesFromCoordinateSystem(nwX, nextX);
-                float relativeNextY = calculateDistancesFromCoordinateSystem(nwY, nextY);
+                //longitude area of map
+                double mapLonDelta = mapLonRight - mapLonLeft;
 
-                //translate them into the coordinate System of the svg
-                double svgX = Math.round(relativeX * FORMATWIDTH / mapWidth)*SVGMMCONSTANT;
-                double svgY = Math.round(relativeY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
-                double svgNextX = Math.round(relativeNextX * FORMATWIDTH / mapWidth)*SVGMMCONSTANT;
-                double svgNextY = Math.round(relativeNextY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
+                //used for calculation in mercator projection
+                double mapLatBottom = seY;
+                double mapLatBottomDegree = mapLatBottom * Math.PI / 180;
+
+                //calculate the position of current mp in pixels
+                double[] pixelCoordinates = convertGeoToPixel(y, x, width,height,mapLonLeft, mapLonDelta, mapLatBottom, mapLatBottomDegree);
+                //calculate the position for nextMp
+                double[] pixelCoordinatesNext = convertGeoToPixel(nextY, nextX, width,height,mapLonLeft, mapLonDelta, mapLatBottom, mapLatBottomDegree);
+
+                double svgX = pixelCoordinates[0];
+                double svgY = pixelCoordinates[1];
+                double svgNextX = pixelCoordinatesNext[0];
+                double svgNextY = pixelCoordinatesNext[1];
 
                 //alter the rotationAngle so that it fits the new translated coordinates
                 double deltaX = svgNextX - svgX;
@@ -1196,24 +1203,30 @@ public class MapServiceImpl implements MapService {
         float x = m.getLocation().x;
         float y = m.getLocation().y;
 
-        //calculate the scaling factors for the different coordinate systems
+        //get the boundaries of the map
         float nwX = map.getNorthWestBoundary().x;
         float seaX = map.getSouthEastBoundary().x;
         float nwY = map.getNorthWestBoundary().y;
         float seY = map.getSouthEastBoundary().y;
 
+        //calculate the size of the board in pixels
+        double width = FORMATWIDTH*SVGMMCONSTANT;
+        double height = FORMATHEIGHT*SVGMMCONSTANT;
 
-        //calculate width and height of the Map
-        float mapWidth = calculateDistancesFromCoordinateSystem(nwX, seaX);
-        float mapHeight = calculateDistancesFromCoordinateSystem(nwY, seY);
+        double mapLonLeft = nwX;
+        double mapLonRight = seaX;
 
-        //get the relative location of the points
-        float relativeY = calculateDistancesFromCoordinateSystem(nwY, y);
-        float relativeX = calculateDistancesFromCoordinateSystem(nwX, x);
+        //longitude area of map
+        double mapLonDelta = mapLonRight - mapLonLeft;
 
-        //translate them into the coordinate System of the svg
-        double svgX = Math.round(relativeX * FORMATWIDTH / mapWidth)*SVGMMCONSTANT;
-        double svgY = Math.round(relativeY * FORMATHEIGHT / mapHeight)*SVGMMCONSTANT;
+        //used for calculation in mercator projection
+        double mapLatBottom = seY;
+        double mapLatBottomDegree = mapLatBottom * Math.PI / 180;
+
+        double[] pixelCoordinates = convertGeoToPixel(y, x, width,height,mapLonLeft, mapLonDelta, mapLatBottom, mapLatBottomDegree);
+        double svgX = pixelCoordinates[0];
+        double svgY = pixelCoordinates[1];
+
 
         String transformation = "translate(" + svgX + ", " + svgY + ")";
 
@@ -1557,38 +1570,62 @@ public class MapServiceImpl implements MapService {
       float nwY = map.getNorthWestBoundary().y;
       float seY = map.getSouthEastBoundary().y;
 
+      //calculate the size of the card
+      double width = CARD_FORMAT_WIDTH;
+      double height = CARD_FORMAT_HEIGHT;
 
-      //calculate height of the Map
-      float mapHeight = calculateDistancesFromCoordinateSystem(nwY, seY);
+      double mapLonLeft = nwX;
+      double mapLonRight = seaX;
 
-      //get the relative location of the points
-      float relativeY = calculateDistancesFromCoordinateSystem(nwY, y);
-      float relativeX = calculateDistancesFromCoordinateSystem(nwX, x);
-      float relativeDestY = calculateDistancesFromCoordinateSystem(nwY, desty);
-      float relativeDestX = calculateDistancesFromCoordinateSystem(nwX, destx);
+      //longitude area of map
+      double mapLonDelta = mapLonRight - mapLonLeft;
 
+      //used for calculation in mercator projection
+      double mapLatBottom = seY;
+      double mapLatBottomDegree = mapLatBottom * Math.PI / 180;
 
-      //translate them into the coordinate System of the svg
-      double svgX = relativeX * CARD_FORMAT_WIDTH / mapWidth;
-      double svgY = relativeY * CARD_FORMAT_HEIGHT / mapHeight;
-      double svgDestX = relativeDestX * CARD_FORMAT_WIDTH / mapWidth;
-      double svgDestY = relativeDestY * CARD_FORMAT_HEIGHT / mapHeight;
+      double[] pixelCoordinates = convertGeoToPixel(y, x, width,height,mapLonLeft, mapLonDelta, mapLatBottom, mapLatBottomDegree);
+      double svgX = pixelCoordinates[0];
+      double svgY = pixelCoordinates[1];
+      double[] pixelCoordinatesNext = convertGeoToPixel(desty, destx, width,height,mapLonLeft, mapLonDelta, mapLatBottom, mapLatBottomDegree);
+      double svgDestX = pixelCoordinatesNext[0];
+      double svgDestY = pixelCoordinatesNext[1];
 
-      //control the values to fit the card and fix circle to middle
+      //control the values to fit the card boundaries and fix circle to middle (circle radius is 5 mm)
+      svgX = svgX - 5;
       if (svgX > CARD_FORMAT_WIDTH - 10) {
         svgX = CARD_FORMAT_WIDTH - 10;
       }
+      if (svgX < 0)
+      {
+        svgX = 0;
+      }
 
+      svgY = svgY - 5;
       if (svgY > CARD_FORMAT_HEIGHT - 10) {
         svgY = CARD_FORMAT_HEIGHT - 10;
       }
+      if (svgY < 0)
+      {
+        svgY = 0;
+      }
 
+      svgDestX = svgDestX - 5;
       if (svgDestX > CARD_FORMAT_WIDTH - 10) {
         svgDestX = CARD_FORMAT_WIDTH - 10;
       }
+      if (svgDestX < 0)
+      {
+        svgDestX = 0;
+      }
 
+      svgDestY = svgDestY - 5;
       if (svgDestY > CARD_FORMAT_HEIGHT - 10) {
         svgDestY = CARD_FORMAT_HEIGHT - 10;
+      }
+      if (svgDestY < 0)
+      {
+        svgDestY = 0;
       }
 
       String cityTransformation = "translate(" + svgX + ", " + svgY + ")";
@@ -1883,5 +1920,32 @@ public class MapServiceImpl implements MapService {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  //converting geographical Data (longitude and latitude) into pixel data for mercator projection
+  private double[] convertGeoToPixel(double latitude, double longitude,
+                                     double mapWidth, //in pixels
+                                     double mapHeight, //in pixels
+                                     double mapLonLeft, //in degrees
+                                     double mapLonDelta, //in degrees
+                                     double mapLatBottom, //in degrees
+                                     double mapLatBottomDegree) { //in Radians
+
+    //x value is calculated based on the position and the size of map
+    double x = (longitude - mapLonLeft) * (mapWidth / mapLonDelta);
+
+    //for the latitutude it has to be calculated to degrees first
+    latitude = latitude * Math.PI / 180;
+
+    //y is calculated based on radius and its offset from the equator
+    double worldMapWidth = ((mapWidth / mapLonDelta) * 360) / (2 * Math.PI);
+    double mapOffsetY = (worldMapWidth / 2 * Math.log((1 + Math.sin(mapLatBottomDegree)) / (1 - Math.sin(mapLatBottomDegree))));
+    double y = mapHeight - ((worldMapWidth / 2 * Math.log((1 + Math.sin(latitude)) / (1 - Math.sin(latitude)))) - mapOffsetY);
+
+    double[] dArray = new double[2];
+    dArray[0] = x;
+    dArray[1] = y;
+
+    return dArray;
   }
 }
