@@ -30,14 +30,14 @@ public class MapEndpoint {
   public MapEndpoint(MapService mapService) {  this.mapService = mapService;  }
 
   @PostMapping
-  @CrossOrigin(origins = "http://localhost:4200")
+  @CrossOrigin(origins = "http://localhost")
   @ResponseStatus(HttpStatus.CREATED)
   public CreateMapDto createMap(@RequestBody CreateMapDto createMapDto) {
     return mapService.create(createMapDto);
   }
 
   @GetMapping(value = "/{id}")
-  @CrossOrigin(origins = "http://localhost:4200")
+  @CrossOrigin(origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public CreateMapDto getMap(@PathVariable Long id)
   {
@@ -45,28 +45,28 @@ public class MapEndpoint {
   }
 
   @PostMapping(value = "/selection/{id}")
-  @CrossOrigin(origins = "http://localhost:4200")
+  @CrossOrigin(origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public List<MapPointDto> showMapPoints(@PathVariable Long id,@RequestBody List<CityDto> cityDtos) {
     return mapService.createMapPoints(id,cityDtos, false);
   }
 
   @PostMapping(value = "/colorization/{id}")
-  @CrossOrigin(origins = "http://localhost:4200")
+  @CrossOrigin(origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public List<MapPointDto> colorizeMapPoints(@PathVariable Long id,@RequestBody List<CityDto> cityDtos) {
     return mapService.colorizeMapPoints(id,cityDtos);
   }
 
   @GetMapping(value = "/mapPoints/{id}")
-  @CrossOrigin(origins = "http://localhost:4200")
+  @CrossOrigin(origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public List<MapPointDto> getMapPoints(@PathVariable Long id) {
     return mapService.getMapPoints(id);
   }
 
   @GetMapping(value = "/cities/{id}")
-  @CrossOrigin(origins = "http://localhost:4200")
+  @CrossOrigin(origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public List<CityDto> getCities(@PathVariable Long id) {
 
@@ -89,7 +89,7 @@ public class MapEndpoint {
   }
 
   @GetMapping (value = "/towns/{id}")
-  @CrossOrigin (origins = "http://localhost:4200")
+  @CrossOrigin (origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public List<CityDto> getTowns(@PathVariable Long id) {
     List<CityDto> cityDtoList = mapService.getTowns(id);
@@ -107,14 +107,14 @@ public class MapEndpoint {
   }
 
   @GetMapping (value = "/gameBoard/create/{id}")
-  @CrossOrigin (origins = "http://localhost:4200")
+  @CrossOrigin (origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public PDFDto createGameBoard(@PathVariable Long id) {
   return mapService.createGameBoard(id);
   }
 
   @GetMapping (value = "/gameBoard/{id}")
-  @CrossOrigin (origins = "http://localhost:4200")
+  @CrossOrigin (origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public PDFDto getGameBoard(@PathVariable Long id) {
 

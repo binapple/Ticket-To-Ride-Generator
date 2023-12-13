@@ -28,14 +28,14 @@ public class MapPointEndpoint {
   }
 
   @GetMapping(value = "/{id}")
-  @CrossOrigin(origins = "http://localhost:4200")
+  @CrossOrigin(origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public MapPointDto getMapPoint(@PathVariable Long id) {
     return mapPointService.get(id);
   }
 
   @PutMapping(value = "/{id}")
-  @CrossOrigin(origins = "http://localhost:4200")
+  @CrossOrigin(origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public MapPointDto updateMapPoint(@PathVariable Long id, @RequestBody MapPointDto mapPointDto)
   {
@@ -43,14 +43,14 @@ public class MapPointEndpoint {
   }
 
   @DeleteMapping(value = "/{id}")
-  @CrossOrigin(origins = "http://localhost:4200")
+  @CrossOrigin(origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public void deleteConnection(@PathVariable Long id) {
     mapPointService.deleteConnection(id);
   }
 
   @PutMapping(value = "")
-  @CrossOrigin(origins = "http://localhost:4200")
+  @CrossOrigin(origins = "http://localhost")
   @ResponseStatus(HttpStatus.OK)
   public List<MapPointDto> addConnection(@RequestBody List<MapPointDto> cityMapPoints) {
     return mapPointService.addConnection(cityMapPoints);
