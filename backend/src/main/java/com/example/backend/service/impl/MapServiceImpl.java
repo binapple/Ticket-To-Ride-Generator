@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
@@ -77,6 +78,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ResourceUtils;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -194,7 +196,7 @@ public class MapServiceImpl implements MapService {
       }
       else {
         StringBuilder responseString = new StringBuilder();
-        Scanner scans = new Scanner(url.openStream());
+        Scanner scans = new Scanner(url.openStream(),StandardCharsets.UTF_8);
 
         while (scans.hasNext())
         {
@@ -1869,18 +1871,15 @@ public class MapServiceImpl implements MapService {
 
     try {
       DefaultConfigurationBuilder cfgBuilder = new DefaultConfigurationBuilder();
-      Configuration cfg = cfgBuilder.buildFromFile(new File("src/main/resources/fop.xml"));
+      InputStream inputStream = MapServiceImpl.class.getResourceAsStream("/fop.xml");
+      Configuration cfg = cfgBuilder.build(inputStream);
       ContainerUtil.configure(transcoder, cfg);
 
     TranscoderInput transcoderInput = new TranscoderInput(document);
     FileOutputStream fOStream = new FileOutputStream(pdfFilePath);
     TranscoderOutput transcoderOutput = new TranscoderOutput(fOStream);
     transcoder.transcode(transcoderInput, transcoderOutput);
-  } catch (ConfigurationException e) {
-    throw new RuntimeException(e);
-  } catch (TranscoderException e) {
-      throw new RuntimeException(e);
-    } catch (FileNotFoundException e) {
+  } catch (TranscoderException | FileNotFoundException | ConfigurationException e) {
       throw new RuntimeException(e);
     }
 

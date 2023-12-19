@@ -16,6 +16,7 @@
 	<properties>
 		<java.version>17</java.version>
 		<org.mapstruct.version>1.5.3.Final</org.mapstruct.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -92,6 +93,10 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<executable>true</executable>
+					<jvmArguments>-Dfile.encoding=UTF8</jvmArguments>
+				</configuration>
 			</plugin>
 
 			<plugin>
@@ -118,6 +123,7 @@
 							-Amapstruct.defaultComponentModel=spring
 						</compilerArg>
 					</compilerArgs>
+					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
 
