@@ -55,11 +55,14 @@ import org.apache.batik.anim.dom.SVGDOMImplementation;
 import org.apache.batik.anim.dom.SVGOMElement;
 import org.apache.batik.svggen.SVGGeneratorContext;
 import org.apache.batik.svggen.SVGGraphics2D;
-import org.apache.batik.transcoder.Transcoder;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.util.XMLResourceDescriptor;
+import org.apache.fop.activity.ContainerUtil;
+import org.apache.fop.configuration.Configuration;
+import org.apache.fop.configuration.ConfigurationException;
+import org.apache.fop.configuration.DefaultConfigurationBuilder;
 import org.apache.fop.svg.PDFTranscoder;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphTests;
@@ -1847,7 +1850,7 @@ public class MapServiceImpl implements MapService {
   }
 
   private static void convertSVGtoPDF(Document document, String pdfFilePath) {
-    try{
+    /*try{
     Transcoder transcoder = new PDFTranscoder();
     TranscoderInput transcoderInput = new TranscoderInput(document);
     FileOutputStream fOStream = new FileOutputStream(pdfFilePath);
@@ -1861,7 +1864,26 @@ public class MapServiceImpl implements MapService {
       throw new RuntimeException(e);
     } catch (IOException e) {
       throw new RuntimeException(e);
+    }*/
+    PDFTranscoder transcoder = new PDFTranscoder();
+
+    try {
+      DefaultConfigurationBuilder cfgBuilder = new DefaultConfigurationBuilder();
+      Configuration cfg = cfgBuilder.buildFromFile(new File("src/main/resources/fop.xml"));
+      ContainerUtil.configure(transcoder, cfg);
+
+    TranscoderInput transcoderInput = new TranscoderInput(document);
+    FileOutputStream fOStream = new FileOutputStream(pdfFilePath);
+    TranscoderOutput transcoderOutput = new TranscoderOutput(fOStream);
+    transcoder.transcode(transcoderInput, transcoderOutput);
+  } catch (ConfigurationException e) {
+    throw new RuntimeException(e);
+  } catch (TranscoderException e) {
+      throw new RuntimeException(e);
+    } catch (FileNotFoundException e) {
+      throw new RuntimeException(e);
     }
+
   }
 
   //render the background image of the map through maperitive with set formatWidth
