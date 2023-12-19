@@ -11,7 +11,8 @@
     <div class="row">
 
       <div class="col-12">
-        <button (click)="backButton()" class="btn btn-outline-primary mx-1">Back to Map selection</button>
+        <button (click)="backButton()" class="btn btn-outline-danger mx-1">Back to Start (Map selection)</button>
+        <button (click)="stepBack()" class="btn btn-outline-primary mx-1">Go Back one Step</button>
         <a *ngIf="gameBoardBlobLoaded" [href]="gameBoardBlobURL" target="_blank" class="btn btn-outline-success mx-1">Open GameBoard-PDF</a>
         <a *ngIf="ticketCardsBlobLoaded" [href]="ticketCardsBlobURL" target="_blank" class="btn btn-outline-success mx-1">Open TicketCards-PDF</a>
       </div>

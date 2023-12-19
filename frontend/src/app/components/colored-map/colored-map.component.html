@@ -23,7 +23,8 @@
         </div>
         </div>
 
-        <button class="btn btn-outline-primary mx-1" (click)="backButton()">Back to Map selection</button>
+        <button class="btn btn-outline-danger mx-1" (click)="backButton()">Back to Start (Map selection)</button>
+        <button class="btn btn-outline-primary mx-1" (click)="stepBack()">Go Back one Step</button>
         <button *ngIf="!creatingConnection" class="btn btn-primary mx-1" (click)="createConnection()">Create New Connection</button>
         <button *ngIf="creatingConnection" class="btn btn-outline-danger mx-1" (click)="createConnection()">Cancel</button>
         <button class="btn btn-success mx-1" (click)="getGameBoard()">

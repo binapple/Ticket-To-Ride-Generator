@@ -130,4 +130,8 @@ export class GameBoardComponent implements OnInit{
     this.router.navigate(['map/']);
   }
 
+  stepBack(){
+    this.router.navigate(['map/colorized/'+this.savedMap.id]);
+  }
+
 }

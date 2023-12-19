@@ -25,7 +25,7 @@ export class MapComponent {
   zoom = this.optionsSpec.zoom;
   center = latLng(this.optionsSpec.center);
   options = {
-    layers: [ tileLayer(this.optionsSpec.layers[0].url, { attribution: this.optionsSpec.layers[0].attribution }) ],
+    layers: [ tileLayer(this.optionsSpec.layers[0].url, { attribution: this.optionsSpec.layers[0].attribution, noWrap: true }) ],
     zoom: this.optionsSpec.zoom,
     center: latLng(this.optionsSpec.center)
   };
