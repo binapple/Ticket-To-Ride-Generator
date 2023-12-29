@@ -7,7 +7,7 @@ import {MapPointDto} from "../dtos/map-point";
   providedIn: 'root'
 })
 export class MapPointService {
-  private baseURI = 'http://localhost:8080/api';
+  private baseURI = 'http://34.125.122.35:8080/api';
 
   constructor(private httpClient: HttpClient) {
   }

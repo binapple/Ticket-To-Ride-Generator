@@ -89,7 +89,7 @@ public class MapEndpoint {
   }
 
   @GetMapping (value = "/towns/{id}")
-  @CrossOrigin (origins = {"http://localhost", "http://localhost:4200"})
+  @CrossOrigin ()
   @ResponseStatus(HttpStatus.OK)
   public List<CityDto> getTowns(@PathVariable Long id) {
     List<CityDto> cityDtoList = mapService.getTowns(id);
@@ -107,14 +107,14 @@ public class MapEndpoint {
   }
 
   @GetMapping (value = "/gameBoard/create/{id}")
-  @CrossOrigin (origins = {"http://localhost", "http://localhost:4200"})
+  @CrossOrigin ()
   @ResponseStatus(HttpStatus.OK)
   public PDFDto createGameBoard(@PathVariable Long id) {
   return mapService.createGameBoard(id);
   }
 
   @GetMapping (value = "/gameBoard/{id}")
-  @CrossOrigin (origins = {"http://localhost", "http://localhost:4200"})
+  @CrossOrigin ()
   @ResponseStatus(HttpStatus.OK)
   public PDFDto getGameBoard(@PathVariable Long id) {
 
