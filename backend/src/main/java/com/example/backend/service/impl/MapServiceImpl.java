@@ -1928,8 +1928,9 @@ public class MapServiceImpl implements MapService {
 
     //run maperitive with default script + custom script for rendering of map
     ProcessBuilder processBuilder = new ProcessBuilder();
+    processBuilder.directory(new File(maperitivePath));
+    processBuilder.command("sudo","./Maperitive.sh","-defscr", "-exa", path);
 
-    processBuilder.command(maperitivePath+"/Maperitive.sh","-defscr", "-exa", path);
     Process process = null;
     try {
       process = processBuilder.start();
