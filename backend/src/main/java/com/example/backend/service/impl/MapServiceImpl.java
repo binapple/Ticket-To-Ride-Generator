@@ -1926,14 +1926,32 @@ public class MapServiceImpl implements MapService {
       e.printStackTrace();
     }
 
+
+    //create script to start maperitive
+    List<String> maperitiveScript = Arrays.asList(
+            "#!/bin/bash",
+            "export DISPLAY=:1",
+            "cd "+ maperitivePath,
+            "sudo ./Maperitive.sh -defscr -exa "+path
+    );
+
+    // Specify the file path and name
+    String scriptFilePath = "maperitiveScript.sh";
+    Path pathMaperitvieScript = Paths.get(scriptFilePath);
+
+    // Write the script content to the file
+    try {
+      Files.write(pathMaperitvieScript, maperitiveScript);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    // Make the script executable
+    pathMaperitvieScript.toFile().setExecutable(true);
+
     //run maperitive with default script + custom script for rendering of map
     ProcessBuilder processBuilder = new ProcessBuilder().inheritIO();
-    processBuilder.command("sudo","/bin/sh","-c","'export DISPLAY=:1 ; cd "+maperitivePath+" ; sudo ./Maperitive.sh -defscr -exa "+path+"'");
-
-    // Retrieve the command before starting the process
-    List<String> command = processBuilder.command();
-    System.out.println("Command: " + String.join(" ", command));
-
+    processBuilder.command("sudo", "./"+scriptFilePath);
 
     Process process = null;
     try {
