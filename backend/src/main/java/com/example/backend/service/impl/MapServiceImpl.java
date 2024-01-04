@@ -1936,7 +1936,7 @@ public class MapServiceImpl implements MapService {
     );
 
     // Specify the file path and name
-    String scriptFilePath = "maperitiveScript.sh";
+    String scriptFilePath = maperitivePath+"/maperitiveScript.sh";
     Path pathMaperitvieScript = Paths.get(scriptFilePath);
 
     // Write the script content to the file
@@ -1951,7 +1951,7 @@ public class MapServiceImpl implements MapService {
 
     //run maperitive with default script + custom script for rendering of map
     ProcessBuilder processBuilder = new ProcessBuilder().inheritIO();
-    processBuilder.command("sudo", "./"+scriptFilePath);
+    processBuilder.command("sudo", "sh",scriptFilePath);
 
     Process process = null;
     try {
