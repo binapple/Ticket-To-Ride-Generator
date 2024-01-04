@@ -1909,10 +1909,10 @@ public class MapServiceImpl implements MapService {
     String scriptContent = String.format(Locale.US,
         "zoom-bounds bounds=%.15f,%.15f,%.15f,%.15f\n" +
             "set-print-bounds-geo bounds=%.15f,%.15f,%.15f,%.15f\n" +
-            "export-bitmap width=%d file="+maperitivePath+"/output/map%d.png\n" +
+            "set-setting name=map.decoration.attribution value=false\n" +
             "set-setting name=map.decoration.grid value=false\n" +
             "set-setting name=map.decoration.scale value=false\n" +
-            "set-setting name=map.decoration.attribution value=false",
+            "export-bitmap width=%d file="+maperitivePath+"/output/map%d.png",
         minLong,minLat,maxLong,maxLat,
         minLong,minLat,maxLong,maxLat,
         calcWidth, id
