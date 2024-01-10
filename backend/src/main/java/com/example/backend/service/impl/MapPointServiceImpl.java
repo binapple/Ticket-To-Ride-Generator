@@ -144,25 +144,37 @@ public class MapPointServiceImpl implements MapPointService {
   public void deleteConnection(Long id) {
 
     MapPoint mP = mapPointRepository.getReferenceById(id);
-    List<MapPoint> toBeDeleted = getAllConnectionNeighbors(mP);
 
-    //neighbors have to be updated so that removed MapPoints don't show up anymore
-    for (MapPoint m: toBeDeleted
-         ) {
-      Set<MapPoint> neighbors = m.getNeighbors();
-      for (MapPoint neighbor: neighbors
-           ) {
-        Set<MapPoint> neighborNeighbors = neighbor.getNeighbors();
-        neighborNeighbors.remove(m);
-        neighbor.setNeighbors(neighborNeighbors);
-        mapPointRepository.save(neighbor);
+    if(!(mP.getColor() == Colorization.CITY)) {
+
+      List<MapPoint> toBeDeleted = getAllConnectionNeighbors(mP);
+
+      //neighbors have to be updated so that removed MapPoints don't show up anymore
+      for (MapPoint m : toBeDeleted
+      ) {
+        Set<MapPoint> neighbors = m.getNeighbors();
+        for (MapPoint neighbor : neighbors
+        ) {
+          Set<MapPoint> neighborNeighbors = neighbor.getNeighbors();
+          neighborNeighbors.remove(m);
+          neighbor.setNeighbors(neighborNeighbors);
+          mapPointRepository.save(neighbor);
+        }
+        //as m gets deleted anyway his neighbors gets set to empty
+        m.setNeighbors(new HashSet<>());
+        mapPointRepository.save(m);
       }
-      //as m gets deleted anyway his neighbors gets set to empty
-      m.setNeighbors(new HashSet<>());
-      mapPointRepository.save(m);
-    }
 
-    mapPointRepository.deleteAll(toBeDeleted);
+      mapPointRepository.deleteAll(toBeDeleted);
+    } else
+    {
+      Set<MapPoint> mPNeighbors = mP.getNeighbors();
+      for (MapPoint neighborPoint: mPNeighbors)
+      {
+        this.deleteConnection(neighborPoint.getId());
+      }
+      mapPointRepository.delete(mP);
+    }
   }
 
   @Override

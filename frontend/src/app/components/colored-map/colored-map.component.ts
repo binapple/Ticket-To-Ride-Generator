@@ -51,8 +51,10 @@ export class ColoredMapComponent implements OnInit {
   ];
   mappedMPs = new Map<number, MapPointDto>();
 
-  //used for new connections
+  //used for new connections and deleting cities
   cityMapPoints: MapPointDto[] = [];
+  cityDelete = false;
+  deleteButton = false;
 
   //used for loading indicator
   loadingGameBoard = false;
@@ -345,7 +347,20 @@ export class ColoredMapComponent implements OnInit {
     console.log(mp);
     if(this.cityMapPoints.length < 1)
     {
-      this.cityMapPoints.push(mp);
+      if(this.cityDelete)
+      {
+        this.mapPointService.deleteConnection(mp.id).subscribe(
+          {
+            next: data =>{
+              this.cityDelete = false;
+              this.drawMapPoints(false);
+            }
+          }
+        )
+
+      } else {
+        this.cityMapPoints.push(mp);
+      }
     }
     else
     {
@@ -376,5 +391,22 @@ export class ColoredMapComponent implements OnInit {
 
   stepBack(){
     this.router.navigate(['map/selected/'+this.savedMap.id]);
+  }
+
+  deleteCity()
+  {
+    if(!this.deleteButton)
+    {
+      this.cityDelete = true;
+      this.cityMapPoints = [];
+      this.deleteButton = true;
+      this.drawMapPoints(true);
+
+    }
+    else {
+      this.cityDelete = false;
+      this.deleteButton = false;
+      this.drawMapPoints(false);
+    }
   }
 }
