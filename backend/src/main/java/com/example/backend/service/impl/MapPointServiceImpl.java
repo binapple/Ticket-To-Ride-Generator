@@ -4,6 +4,7 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.example.backend.endpoint.dto.MapPointDto;
@@ -143,37 +144,38 @@ public class MapPointServiceImpl implements MapPointService {
   @Override
   public void deleteConnection(Long id) {
 
-    MapPoint mP = mapPointRepository.getReferenceById(id);
+    Optional<MapPoint> oMP = mapPointRepository.findById(id);
+    MapPoint mP = oMP.orElse(null);
+    if(mP != null) {
+      if (!(mP.getColor() == Colorization.CITY)) {
 
-    if(!(mP.getColor() == Colorization.CITY)) {
+        List<MapPoint> toBeDeleted = getAllConnectionNeighbors(mP);
 
-      List<MapPoint> toBeDeleted = getAllConnectionNeighbors(mP);
-
-      //neighbors have to be updated so that removed MapPoints don't show up anymore
-      for (MapPoint m : toBeDeleted
-      ) {
-        Set<MapPoint> neighbors = m.getNeighbors();
-        for (MapPoint neighbor : neighbors
+        //neighbors have to be updated so that removed MapPoints don't show up anymore
+        for (MapPoint m : toBeDeleted
         ) {
-          Set<MapPoint> neighborNeighbors = neighbor.getNeighbors();
-          neighborNeighbors.remove(m);
-          neighbor.setNeighbors(neighborNeighbors);
-          mapPointRepository.save(neighbor);
+          Set<MapPoint> neighbors = m.getNeighbors();
+          for (MapPoint neighbor : neighbors
+          ) {
+            Set<MapPoint> neighborNeighbors = neighbor.getNeighbors();
+            neighborNeighbors.remove(m);
+            neighbor.setNeighbors(neighborNeighbors);
+            mapPointRepository.save(neighbor);
+          }
+          //as m gets deleted anyway his neighbors gets set to empty
+          m.setNeighbors(new HashSet<>());
+          mapPointRepository.save(m);
         }
-        //as m gets deleted anyway his neighbors gets set to empty
-        m.setNeighbors(new HashSet<>());
-        mapPointRepository.save(m);
-      }
 
-      mapPointRepository.deleteAll(toBeDeleted);
-    } else
-    {
-      Set<MapPoint> mPNeighbors = mP.getNeighbors();
-      for (MapPoint neighborPoint: mPNeighbors)
-      {
-        this.deleteConnection(neighborPoint.getId());
+        mapPointRepository.deleteAll(toBeDeleted);
+      } else {
+        Set<MapPoint> mPNeighbors = mP.getNeighbors();
+        List<MapPoint> mPNeighborsList = mPNeighbors.stream().toList();
+        for (int i = 0; i < mPNeighborsList.size(); i++) {
+          this.deleteConnection(mPNeighborsList.get(i).getId());
+        }
+        mapPointRepository.delete(mP);
       }
-      mapPointRepository.delete(mP);
     }
   }
 

@@ -25,9 +25,9 @@
 
         <button class="btn btn-outline-danger mx-1" (click)="backButton()">Back to Start (Map selection)</button>
         <button class="btn btn-outline-primary mx-1" (click)="stepBack()">Go Back one Step</button>
-        <button *ngIf="!cityDelete" class="btn btn-danger mx-1" (click)="deleteCity()">Delete City</button>
-        <button *ngIf="cityDelete" class="btn btn-outline-danger mx-1" (click)="deleteCity()">Cancel</button>
-        <button *ngIf="!creatingConnection" class="btn btn-primary mx-1" (click)="createConnection()">Create New Connection</button>
+        <button *ngIf="!deleteButton && !creatingConnection" class="btn btn-danger mx-1" (click)="deleteCity()">Delete City</button>
+        <button *ngIf="deleteButton" class="btn btn-outline-danger mx-1" (click)="deleteCity()">Cancel</button>
+        <button *ngIf="!creatingConnection && !deleteButton" class="btn btn-primary mx-1" (click)="createConnection()">Create New Connection</button>
         <button *ngIf="creatingConnection" class="btn btn-outline-danger mx-1" (click)="createConnection()">Cancel</button>
         <button class="btn btn-success mx-1" (click)="getGameBoard()">
           <div *ngIf="!loadingGameBoard">Create Game Board</div>
@@ -39,15 +39,18 @@
         </button>
 
         <div class="col-12 mt-3">
-          <div *ngIf="!creatingConnection">
+          <div *ngIf="!creatingConnection && !deleteButton">
             Dragging a Map Point (red dot) lets you reposition it to your liking
             <br>
-          Double-clicking on a Map Point lets allows you to edit its values or properties of the whole connection
+          Double-clicking on a Map Point allows you to edit its values or properties of the whole connection
           <br>
           You can add new connections between cities by clicking on the button.
           </div>
           <div *ngIf="creatingConnection">
           To create a new connection double-click on a city and afterwards double-click on the city that you want to connect it to.
+          </div>
+          <div *ngIf="deleteButton">
+          To delete a city double-click on it.
           </div>
         </div>
 

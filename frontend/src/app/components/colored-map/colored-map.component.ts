@@ -353,7 +353,8 @@ export class ColoredMapComponent implements OnInit {
           {
             next: data =>{
               this.cityDelete = false;
-              this.drawMapPoints(false);
+              this.deleteButton = false;
+              this.getMapPoints(this.savedMap.id);
             }
           }
         )

@@ -59,6 +59,7 @@ import org.apache.batik.svggen.SVGGraphics2D;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.util.SVGConstants;
 import org.apache.batik.util.XMLResourceDescriptor;
 import org.apache.fop.activity.ContainerUtil;
 import org.apache.fop.configuration.Configuration;
@@ -78,7 +79,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ResourceUtils;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -120,10 +120,12 @@ public class MapServiceImpl implements MapService {
   public static final double INCH_IN_MILLIMETERS = 25.4;
 
   //Constant for deciding how big the raster image will be rendered
-  public static final int DPI = 96;
+  public static final int DPI = 600;
   //getting folder path from application.properties
-  @Value("${maperitive.folderpath}")
-  private String maperitivePath;
+  @Value("${maperitive.folderpathLinux}")
+  private String maperitivePathLinux;
+  @Value("${maperitive.folderpathWindows}")
+  private String maperitivePathWindows;
 
   //SVG Constant for mm
   public static final double SVGMMCONSTANT = DPI / INCH_IN_MILLIMETERS;
@@ -998,15 +1000,17 @@ public class MapServiceImpl implements MapService {
 
       //Size it to desired Format
       Element svgRoot = mergedDoc.getRootElement();
-      svgRoot.setAttributeNS(null, "width", String.valueOf(FORMATWIDTH)+"mm");
-      svgRoot.setAttributeNS(null, "height", String.valueOf(FORMATHEIGHT)+"mm");
+      svgRoot.setAttributeNS(null, "width", String.valueOf(FORMATWIDTH*SVGMMCONSTANT));
+      svgRoot.setAttributeNS(null, "height", String.valueOf(FORMATHEIGHT*SVGMMCONSTANT));
+      //TODO: Check this attribute
+      svgRoot.setAttributeNS(null, "preserveAspectRatio", "none");
 
 
       //create tickets
-      createTicketCards(map.getId());
+      //createTicketCards(map.getId());
 
       //Render the big image in maperitive
-      renderMap(map, FORMATWIDTH);
+      //renderMap(map, FORMATWIDTH);
 
 
 
@@ -1019,7 +1023,11 @@ public class MapServiceImpl implements MapService {
       String xlinkNS = "http://www.w3.org/1999/xlink" ;
 
       //Embed the image to the svg file by encoding it to base64
-      Path imagePath = Paths.get(maperitivePath, "output", "map" + map.getId().toString() + ".png");
+      //Linux
+      //Path imagePath = Paths.get(maperitivePathLinux, "output", "map" + map.getId().toString() + ".png");
+
+      //Windows
+      Path imagePath = Paths.get(maperitivePathWindows, "output", "map" + map.getId().toString() + ".png");
 
       byte[] imageBytes = new byte[0];
       try {
@@ -1116,6 +1124,10 @@ public class MapServiceImpl implements MapService {
 
                 //load svgDocument to append
                 SVGDocument svgDoc = loadSVGDocument(svgName);
+
+                //resize svg to DPI (original is 72)
+                int originalDPI = 72;
+                resizeSVGtoNewDPI(svgDoc, originalDPI, DPI);
 
                 //alter svg content to match the positioning of MapPoints and their connections
                 Element rootOfDoc = svgDoc.getRootElement();
@@ -1365,7 +1377,11 @@ public class MapServiceImpl implements MapService {
     String xlinkNS = "http://www.w3.org/1999/xlink";
 
     //the image to be embedded to the ticket svg files encoded to base64
-    Path imagePath = Paths.get(maperitivePath, "output", "map" + map.getId().toString() + ".png");
+    //Linux
+    //Path imagePath = Paths.get(maperitivePathLinux, "output", "map" + map.getId().toString() + ".png");
+
+    //Windows
+    Path imagePath = Paths.get(maperitivePathWindows, "output", "map" + map.getId().toString() + ".png");
 
     byte[] imageBytes = new byte[0];
     try {
@@ -1828,12 +1844,15 @@ public class MapServiceImpl implements MapService {
 
     dstElement = targetDoc.getRootElement();
 
-    NodeList nodeList = srcElement.getChildNodes();
+    /*NodeList nodeList = srcElement.getChildNodes();
     for (int i = 0; i < nodeList.getLength(); i++) {
       Node node = nodeList.item(i);
       Node importedNode = targetDoc.importNode(node, true);
       dstElement.appendChild(importedNode);
-    }
+    }*/
+
+    Node importedNote = targetDoc.importNode(srcElement,true);
+    dstElement.appendChild(importedNote);
 
   }
 
@@ -1868,6 +1887,8 @@ public class MapServiceImpl implements MapService {
       throw new RuntimeException(e);
     }*/
     PDFTranscoder transcoder = new PDFTranscoder();
+    float pixelToMillimeter = (float)(INCH_IN_MILLIMETERS / DPI);
+    transcoder.addTranscodingHint(PDFTranscoder.KEY_PIXEL_UNIT_TO_MILLIMETER, pixelToMillimeter);
 
     try {
       DefaultConfigurationBuilder cfgBuilder = new DefaultConfigurationBuilder();
@@ -1886,7 +1907,8 @@ public class MapServiceImpl implements MapService {
   }
 
   //render the background image of the map through maperitive with set formatWidth
-  private void renderMap(Map map, int formatWidth)
+  //Linux
+  /*private void renderMap(Map map, int formatWidth)
   {
 
     // getting boundingBox values
@@ -1912,14 +1934,14 @@ public class MapServiceImpl implements MapService {
             "set-setting name=map.decoration.attribution value=false\n" +
             "set-setting name=map.decoration.grid value=false\n" +
             "set-setting name=map.decoration.scale value=false\n" +
-            "export-bitmap width=%d file="+maperitivePath+"/output/map%d.png",
+            "export-bitmap width=%d file="+ maperitivePathLinux +"/output/map%d.png",
         minLong,minLat,maxLong,maxLat,
         minLong,minLat,maxLong,maxLat,
         calcWidth, id
         );
 
     //save the script
-    String path = maperitivePath + "/Scripts/map" + id + ".mscript";
+    String path = maperitivePathLinux + "/Scripts/map" + id + ".mscript";
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
       writer.write(scriptContent);
     } catch (IOException e) {
@@ -1928,15 +1950,16 @@ public class MapServiceImpl implements MapService {
 
 
     //create script to start maperitive
+    //the first command is used for referencing to xvfb display (Screen 1 has to be defined on the Linux machine)
     List<String> maperitiveScript = Arrays.asList(
             "#!/bin/bash",
             "export DISPLAY=:1",
-            "cd "+ maperitivePath,
+            "cd "+ maperitivePathLinux,
             "sudo ./Maperitive.sh -defscr -exa "+path
     );
 
     // Specify the file path and name
-    String scriptFilePath = maperitivePath+"/maperitiveScript.sh";
+    String scriptFilePath = maperitivePathLinux +"/maperitiveScript.sh";
     Path pathMaperitvieScript = Paths.get(scriptFilePath);
 
     // Write the script content to the file
@@ -1953,6 +1976,64 @@ public class MapServiceImpl implements MapService {
     ProcessBuilder processBuilder = new ProcessBuilder().inheritIO();
     processBuilder.command("sudo", "sh",scriptFilePath);
 
+    Process process = null;
+    try {
+      process = processBuilder.start();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    try {
+      int exitCode = process.waitFor();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }*/
+
+  //Windows
+  private void renderMap(Map map, int formatWidth)
+  {
+
+    // getting boundingBox values
+    double nwX = map.getNorthWestBoundary().x;
+    double nwY = map.getNorthWestBoundary().y;
+    double seaX = map.getSouthEastBoundary().x;
+    double seY = map.getSouthEastBoundary().y;
+
+    //getting min and max values of long & lat for maperitive
+    double minLong = Math.min(nwX, seaX);
+    double maxLong = Math.max(nwX,seaX);
+    double minLat = Math.min(nwY, seY);
+    double maxLat = Math.max(nwY,seY);
+
+    Long id = map.getId();
+
+    int calcWidth = (int) Math.floor(formatWidth * DPI / INCH_IN_MILLIMETERS);
+
+    // create a maperitive script for automatic rendering
+    String scriptContent = String.format(Locale.US,
+                                         "zoom-bounds bounds=%.15f,%.15f,%.15f,%.15f\n" +
+                                             "set-print-bounds-geo bounds=%.15f,%.15f,%.15f,%.15f\n" +
+                                             "export-bitmap width=%d file="+maperitivePathWindows+"/output/map%d.png\n" +
+                                             "set-setting name=map.decoration.grid value=false\n" +
+                                             "set-setting name=map.decoration.scale value=false\n" +
+                                             "set-setting name=map.decoration.attribution value=false",
+                                         minLong,minLat,maxLong,maxLat,
+                                         minLong,minLat,maxLong,maxLat,
+                                         calcWidth, id
+    );
+
+    //save the script
+    String path = maperitivePathWindows + "/Scripts/map" + id + ".mscript";
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
+      writer.write(scriptContent);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    //run maperitive with default script + custom script for rendering of map
+    ProcessBuilder processBuilder = new ProcessBuilder();
+
+    processBuilder.command(maperitivePathWindows+"/Maperitive","-defscr", "-exa", path);
     Process process = null;
     try {
       process = processBuilder.start();
@@ -1991,5 +2072,26 @@ public class MapServiceImpl implements MapService {
     dArray[1] = y;
 
     return dArray;
+  }
+
+  private void resizeSVGtoNewDPI(SVGDocument svgDocument, int originalDPI, int dpi) {
+    Element svgElement = svgDocument.getDocumentElement();
+
+    // Get the original width and height
+    String svgWidth = svgElement.getAttribute(SVGConstants.SVG_WIDTH_ATTRIBUTE);
+    String svgHeight = svgElement.getAttribute(SVGConstants.SVG_HEIGHT_ATTRIBUTE);
+
+    svgWidth = svgWidth.substring(0,svgWidth.length() - 2);
+    svgHeight = svgHeight.substring(0,svgHeight.length() - 2);
+
+    float originalWidth = Float.parseFloat(svgWidth);
+    float originalHeight = Float.parseFloat(svgHeight);
+
+    // Calculate the conversion factor
+    float conversionFactor = (float) dpi / originalDPI;
+
+    // Set the new width/height attributes
+    svgElement.setAttribute(SVGConstants.SVG_WIDTH_ATTRIBUTE, originalWidth * conversionFactor + "pt");
+    svgElement.setAttribute(SVGConstants.SVG_HEIGHT_ATTRIBUTE, originalHeight * conversionFactor + "pt");
   }
 }
