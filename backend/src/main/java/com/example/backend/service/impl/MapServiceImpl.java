@@ -120,7 +120,7 @@ public class MapServiceImpl implements MapService {
   public static final double INCH_IN_MILLIMETERS = 25.4;
 
   //Constant for deciding how big the raster image will be rendered
-  public static final int DPI = 600;
+  public static final int DPI = 500;
   //getting folder path from application.properties
   @Value("${maperitive.folderpathLinux}")
   private String maperitivePathLinux;
@@ -1002,15 +1002,13 @@ public class MapServiceImpl implements MapService {
       Element svgRoot = mergedDoc.getRootElement();
       svgRoot.setAttributeNS(null, "width", String.valueOf(FORMATWIDTH)+"mm");
       svgRoot.setAttributeNS(null, "height", String.valueOf(FORMATHEIGHT)+"mm");
-      //TODO: Check this attribute
-      //svgRoot.setAttributeNS(null, "preserveAspectRatio", "none");
 
 
       //create tickets
-      //createTicketCards(map.getId());
+      createTicketCards(map.getId());
 
       //Render the big image in maperitive
-      //renderMap(map, FORMATWIDTH);
+      renderMap(map, FORMATWIDTH);
 
 
 
@@ -1125,10 +1123,6 @@ public class MapServiceImpl implements MapService {
                 //load svgDocument to append
                 SVGDocument svgDoc = loadSVGDocument(svgName);
 
-                //resize svg to DPI (original is 72)
-                //int originalDPI = 96;
-                //resizeSVGtoNewDPI(svgDoc, originalDPI, DPI);
-
                 //alter svg content to match the positioning of MapPoints and their connections
                 Element rootOfDoc = svgDoc.getRootElement();
                 NodeList nodes = rootOfDoc.getChildNodes();
@@ -1149,8 +1143,8 @@ public class MapServiceImpl implements MapService {
                 float seY = map.getSouthEastBoundary().y;
 
                 //calculate the size of the board in pixels
-                double width = FORMATWIDTH*72/INCH_IN_MILLIMETERS;
-                double height = FORMATHEIGHT*72/INCH_IN_MILLIMETERS;
+                double width = FORMATWIDTH*96/INCH_IN_MILLIMETERS;
+                double height = FORMATHEIGHT*96/INCH_IN_MILLIMETERS;
 
                   double mapLonLeft = nwX;
                 double mapLonRight = seaX;
@@ -1207,9 +1201,6 @@ public class MapServiceImpl implements MapService {
 
         //merge city svg
         SVGDocument citySVG = loadSVGDocument("static/city.svg");
-        //resize svg to correct DPI
-        //int originalDPI = 96;
-        //resizeSVGtoNewDPI(citySVG, originalDPI, DPI);
 
         //change text of element
         Element text = citySVG.getElementById("textElement");
@@ -1230,9 +1221,8 @@ public class MapServiceImpl implements MapService {
         float seY = map.getSouthEastBoundary().y;
 
         //calculate the size of the board in pixels
-        double width = FORMATWIDTH*72/INCH_IN_MILLIMETERS;
-        double height = FORMATHEIGHT*72/INCH_IN_MILLIMETERS;
-        //TODO checke this constant
+        double width = FORMATWIDTH*96/INCH_IN_MILLIMETERS;
+        double height = FORMATHEIGHT*96/INCH_IN_MILLIMETERS;
 
         double mapLonLeft = nwX;
         double mapLonRight = seaX;
@@ -1849,8 +1839,8 @@ public class MapServiceImpl implements MapService {
     dstElement = targetDoc.getRootElement();
 
     //Create new <g> element
-    Element groupContainer = targetDoc.createElementNS(SVGConstants.SVG_NAMESPACE_URI, "g");
-    dstElement.appendChild(groupContainer);
+    //Element groupContainer = targetDoc.createElementNS(SVGConstants.SVG_NAMESPACE_URI, "g");
+    //dstElement.appendChild(groupContainer);
 
     NodeList nodeList = srcElement.getChildNodes();
     for (int i = 0; i < nodeList.getLength(); i++) {
@@ -1872,6 +1862,9 @@ public class MapServiceImpl implements MapService {
 
       try (Writer writer = new OutputStreamWriter(new FileOutputStream(outputFileName), "UTF-8")) {
         g2d.stream(svgDocument.getDocumentElement(), writer);
+      }
+      finally {
+        g2d.dispose();
       }
     } catch (IOException e) {
       e.printStackTrace();
@@ -1908,7 +1901,11 @@ public class MapServiceImpl implements MapService {
     FileOutputStream fOStream = new FileOutputStream(pdfFilePath);
     TranscoderOutput transcoderOutput = new TranscoderOutput(fOStream);
     transcoder.transcode(transcoderInput, transcoderOutput);
+    inputStream.close();
+    fOStream.close();
   } catch (TranscoderException | FileNotFoundException | ConfigurationException e) {
+      throw new RuntimeException(e);
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
 
@@ -1933,7 +1930,7 @@ public class MapServiceImpl implements MapService {
 
     Long id = map.getId();
 
-    int calcWidth = (int) Math.floor(formatWidth * DPI / INCH_IN_MILLIMETERS);
+    int calcWidth = (int) (formatWidth * 100/ INCH_IN_MILLIMETERS);
 
     // create a maperitive script for automatic rendering
     String scriptContent = String.format(Locale.US,
@@ -1942,10 +1939,10 @@ public class MapServiceImpl implements MapService {
             "set-setting name=map.decoration.attribution value=false\n" +
             "set-setting name=map.decoration.grid value=false\n" +
             "set-setting name=map.decoration.scale value=false\n" +
-            "export-bitmap width=%d file="+ maperitivePathLinux +"/output/map%d.png",
+            "export-bitmap width=%d dpi=%d file="+ maperitivePathLinux +"/output/map%d.png",
         minLong,minLat,maxLong,maxLat,
         minLong,minLat,maxLong,maxLat,
-        calcWidth, id
+        calcWidth, DPI,id
         );
 
     //save the script
@@ -2015,7 +2012,7 @@ public class MapServiceImpl implements MapService {
 
     Long id = map.getId();
 
-    int calcWidth = (int) (formatWidth / INCH_IN_MILLIMETERS);
+    int calcWidth = (int) (formatWidth * 100/ INCH_IN_MILLIMETERS);
 
     // create a maperitive script for automatic rendering
     String scriptContent = String.format(Locale.US,
@@ -2024,10 +2021,10 @@ public class MapServiceImpl implements MapService {
                     "set-setting name=map.decoration.attribution value=false\n" +
                     "set-setting name=map.decoration.grid value=false\n" +
                     "set-setting name=map.decoration.scale value=false\n" +
-                    "export-bitmap width=%d dpi=%d file="+ maperitivePathLinux +"/output/map%d.png",
+                    "export-bitmap width=%d dpi=%d file="+ maperitivePathWindows +"/output/map%d.png",
             minLong,minLat,maxLong,maxLat,
             minLong,minLat,maxLong,maxLat,
-            calcWidth, DPI, id
+            calcWidth, DPI,id
     );
 
     //save the script
@@ -2082,7 +2079,7 @@ public class MapServiceImpl implements MapService {
     return dArray;
   }
 
-  private void resizeSVGtoNewDPI(SVGDocument svgDocument, int originalDPI, int dpi) {
+ /* private void resizeSVGtoNewDPI(SVGDocument svgDocument, int originalDPI, int dpi) {
     Element svgElement = svgDocument.getDocumentElement();
 
     // Get the original width and height
@@ -2101,5 +2098,5 @@ public class MapServiceImpl implements MapService {
     // Set the new width/height attributes
     svgElement.setAttribute(SVGConstants.SVG_WIDTH_ATTRIBUTE, originalWidth * conversionFactor + "pt");
     svgElement.setAttribute(SVGConstants.SVG_HEIGHT_ATTRIBUTE, originalHeight * conversionFactor + "pt");
-  }
+  }*/
 }
