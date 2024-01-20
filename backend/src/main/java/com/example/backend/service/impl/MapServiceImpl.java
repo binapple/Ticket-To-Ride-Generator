@@ -44,9 +44,11 @@ import com.example.backend.endpoint.mapper.MapPointMapper;
 import com.example.backend.entitiy.City;
 import com.example.backend.entitiy.Map;
 import com.example.backend.entitiy.MapPoint;
+import com.example.backend.entitiy.PDF;
 import com.example.backend.repository.CityRepository;
 import com.example.backend.repository.MapPointRepository;
 import com.example.backend.repository.MapRepository;
+import com.example.backend.repository.PDFRepository;
 import com.example.backend.service.MapService;
 import com.example.backend.type.Colorization;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -97,6 +99,7 @@ public class MapServiceImpl implements MapService {
   private final CityRepository cityRepository;
   private final MapPointMapper mapPointMapper;
   private final MapPointRepository mapPointRepository;
+  private final PDFRepository pdfRepository;
 
   //these variables are used to change the length and height in millimeters of the resulting game plan (now it is set to DIN A0)
   public static final int FORMATWIDTH = 1189;
@@ -120,7 +123,7 @@ public class MapServiceImpl implements MapService {
   public static final double INCH_IN_MILLIMETERS = 25.4;
 
   //Constant for deciding how big the raster image will be rendered
-  public static final int DPI = 500;
+  public static final int DPI = 300;
   //getting folder path from application.properties
   @Value("${maperitive.folderpathLinux}")
   private String maperitivePathLinux;
@@ -131,13 +134,15 @@ public class MapServiceImpl implements MapService {
   public static final double SVGMMCONSTANT = DPI / INCH_IN_MILLIMETERS;
 
   @Autowired
-  public MapServiceImpl(MapMapper mapMapper, MapRepository mapRepository, CityMapper cityMapper, CityRepository cityRepository, MapPointMapper mapPointMapper, MapPointRepository mapPointRepository) {
+  public MapServiceImpl(MapMapper mapMapper, MapRepository mapRepository, CityMapper cityMapper, CityRepository cityRepository, MapPointMapper mapPointMapper, MapPointRepository mapPointRepository,
+                        PDFRepository pdfRepository) {
     this.mapMapper = mapMapper;
     this.mapRepository = mapRepository;
     this.cityMapper = cityMapper;
     this.cityRepository = cityRepository;
     this.mapPointMapper = mapPointMapper;
     this.mapPointRepository = mapPointRepository;
+    this.pdfRepository = pdfRepository;
   }
 
   @Override
@@ -1266,7 +1271,16 @@ public class MapServiceImpl implements MapService {
     try {
       byte[] gameBoardBytes = Files.readAllBytes(gameBoard.toPath());
 
-      map.setGameBoard(gameBoardBytes);
+      PDF pdf = map.getPdf();
+      if (pdf == null)
+      {
+        pdf = new PDF();
+      }
+
+      pdf.setGameBoard(gameBoardBytes);
+      pdf.setMap(map);
+      pdfRepository.save(pdf);
+      map.setPdf(pdf);
       mapRepository.save(map);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -1274,8 +1288,8 @@ public class MapServiceImpl implements MapService {
 
     //create PDFDto to return
     PDFDto pdfDto = new PDFDto();
-    pdfDto.setGameBoard(map.getGameBoard());
-    pdfDto.setTicketCards(map.getTicketCards());
+    pdfDto.setGameBoard(map.getPdf().getGameBoard());
+    pdfDto.setTicketCards(map.getPdf().getTicketCards());
     pdfDto.setId(map.getId());
 
     return pdfDto;
@@ -1290,8 +1304,15 @@ public class MapServiceImpl implements MapService {
     if(map != null) {
 
       pdfDto.setId(map.getId());
-      pdfDto.setGameBoard(map.getGameBoard());
-      pdfDto.setTicketCards(map.getTicketCards());
+      if(map.getPdf() == null)
+      {
+        PDF pdf = new PDF();
+        pdf.setMap(map);
+        pdfRepository.save(pdf);
+      } else {
+        pdfDto.setGameBoard(map.getPdf().getGameBoard());
+        pdfDto.setTicketCards(map.getPdf().getTicketCards());
+      }
     }
 
     return pdfDto;
@@ -1738,7 +1759,17 @@ public class MapServiceImpl implements MapService {
 
     try {
       byte[] ticketCardsBytes = Files.readAllBytes(ticketCards.toPath());
-      map.setTicketCards(ticketCardsBytes);
+      PDF pdf = map.getPdf();
+      if(pdf == null)
+      {
+        pdf = new PDF();
+      }
+
+      pdf.setTicketCards(ticketCardsBytes);
+      pdf.setMap(map);
+      pdfRepository.save(pdf);
+      map.setPdf(pdf);
+
       mapRepository.save(map);
     } catch (IOException e) {
       throw new RuntimeException(e);

@@ -30,13 +30,8 @@ public class Map {
   @Column(columnDefinition = "integer default 5")
   private int zoom;
 
-  @Lob
-  @Column(name = "gameBoard", columnDefinition = "BLOB")
-  private byte[] gameBoard;
-
-  @Lob
-  @Column(name = "ticketCards", columnDefinition = "BLOB")
-  private byte[] ticketCards;
+  @OneToOne(fetch = FetchType.LAZY)
+  private PDF pdf;
 
   @ManyToMany
   @JoinTable(
@@ -131,19 +126,11 @@ public class Map {
     this.center = center;
   }
 
-  public byte[] getGameBoard() {
-    return gameBoard;
+  public PDF getPdf() {
+    return pdf;
   }
 
-  public void setGameBoard(byte[] gameBoard) {
-    this.gameBoard = gameBoard;
-  }
-
-  public byte[] getTicketCards() {
-    return ticketCards;
-  }
-
-  public void setTicketCards(byte[] ticketCards) {
-    this.ticketCards = ticketCards;
+  public void setPdf(PDF pdf) {
+    this.pdf = pdf;
   }
 }
