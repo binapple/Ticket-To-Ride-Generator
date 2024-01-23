@@ -61,7 +61,6 @@ import org.apache.batik.svggen.SVGGraphics2D;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
-import org.apache.batik.util.SVGConstants;
 import org.apache.batik.util.XMLResourceDescriptor;
 import org.apache.fop.activity.ContainerUtil;
 import org.apache.fop.configuration.Configuration;
@@ -123,7 +122,7 @@ public class MapServiceImpl implements MapService {
   public static final double INCH_IN_MILLIMETERS = 25.4;
 
   //Constant for deciding how big the raster image will be rendered
-  public static final int DPI = 300;
+  public static final int DPI = 500;
   //getting folder path from application.properties
   @Value("${maperitive.folderpathLinux}")
   private String maperitivePathLinux;
@@ -1013,7 +1012,18 @@ public class MapServiceImpl implements MapService {
       createTicketCards(map.getId());
 
       //Render the big image in maperitive
-      renderMap(map, FORMATWIDTH);
+      //change method and image path based on OS
+      String os = System.getProperty("os.name").toLowerCase();
+      Path imagePath;
+      if(os.contains("win")) {
+        //renderMapWindows(map, FORMATWIDTH);
+        imagePath = Paths.get(maperitivePathWindows, "output", "map" + map.getId().toString() + ".png");
+      }
+      else
+      {
+        renderMapLinux(map, FORMATWIDTH);
+        imagePath = Paths.get(maperitivePathLinux, "output", "map" + map.getId().toString() + ".png");
+      }
 
 
 
@@ -1026,12 +1036,6 @@ public class MapServiceImpl implements MapService {
       String xlinkNS = "http://www.w3.org/1999/xlink" ;
 
       //Embed the image to the svg file by encoding it to base64
-      //Linux
-      //Path imagePath = Paths.get(maperitivePathLinux, "output", "map" + map.getId().toString() + ".png");
-
-      //Windows
-      Path imagePath = Paths.get(maperitivePathWindows, "output", "map" + map.getId().toString() + ".png");
-
       byte[] imageBytes = new byte[0];
       try {
         imageBytes = Files.readAllBytes(imagePath);
@@ -1147,7 +1151,7 @@ public class MapServiceImpl implements MapService {
                 float nwY = map.getNorthWestBoundary().y;
                 float seY = map.getSouthEastBoundary().y;
 
-                //calculate the size of the board in pixels
+                //calculate the size of the board in pixels (DPI for SVGs are set by batik therefore 96)
                 double width = FORMATWIDTH*96/INCH_IN_MILLIMETERS;
                 double height = FORMATHEIGHT*96/INCH_IN_MILLIMETERS;
 
@@ -1177,8 +1181,13 @@ public class MapServiceImpl implements MapService {
 
                 double rotationAngle = Math.toDegrees(Math.atan2(deltaY, deltaX));
 
+                //correct the svg offset (origin is top left)
+                //svgs are saved in 72 DPI, Batik uses 96 DPI thus resulting
+                //half of height of train-fields svg * 1.35
+                double offsetSvgY = svgY - (11.85 * 1.35);
 
-                String transformation = "translate(" + svgX + ", " + svgY + ") rotate(" + rotationAngle + ")";
+                //scale is used to adjust to 96 DPI from 72 thus ~1.35
+                String transformation = "rotate(" + rotationAngle + ", " + svgX + ", " + svgY + ") translate(" + svgX + ", " + offsetSvgY + ") scale(1.35)";
 
                 for (int i = 0; i < nodes.getLength(); i++) {
                   Node childNode = nodes.item(i);
@@ -1225,7 +1234,7 @@ public class MapServiceImpl implements MapService {
         float nwY = map.getNorthWestBoundary().y;
         float seY = map.getSouthEastBoundary().y;
 
-        //calculate the size of the board in pixels
+        //calculate the size of the board in pixels (DPI for SVGs are set by batik therefore 96)
         double width = FORMATWIDTH*96/INCH_IN_MILLIMETERS;
         double height = FORMATHEIGHT*96/INCH_IN_MILLIMETERS;
 
@@ -1243,6 +1252,9 @@ public class MapServiceImpl implements MapService {
         double svgX = pixelCoordinates[0];
         double svgY = pixelCoordinates[1];
 
+        //correct the svg offset (origin is in top left)
+        svgX = svgX - 14.28;
+        svgY = svgY - 14.28;
 
         String transformation = "translate(" + svgX + ", " + svgY + ")";
 
@@ -1383,7 +1395,18 @@ public class MapServiceImpl implements MapService {
     svgRoot.setAttributeNS(null, "viewBox", "0 0 "+CARD_PRINT_WIDTH+" "+CARD_PRINT_HEIGHT);
 
     //render a smaller image according to card format
-    renderMap(map, CARD_FORMAT_WIDTH);
+    //change method and image path based on OS
+    String os = System.getProperty("os.name").toLowerCase();
+    Path imagePath;
+    if(os.contains("win")) {
+      renderMapWindows(map, CARD_FORMAT_WIDTH);
+      imagePath = Paths.get(maperitivePathWindows, "output", "map" + map.getId().toString() + ".png");
+    }
+    else
+    {
+      renderMapLinux(map, CARD_FORMAT_WIDTH);
+      imagePath = Paths.get(maperitivePathLinux, "output", "map" + map.getId().toString() + ".png");
+    }
 
     int calcWidth = (int) Math.floor(CARD_FORMAT_WIDTH);
     int calcHeight = (int) Math.floor(CARD_FORMAT_HEIGHT);
@@ -1392,12 +1415,6 @@ public class MapServiceImpl implements MapService {
     String xlinkNS = "http://www.w3.org/1999/xlink";
 
     //the image to be embedded to the ticket svg files encoded to base64
-    //Linux
-    //Path imagePath = Paths.get(maperitivePathLinux, "output", "map" + map.getId().toString() + ".png");
-
-    //Windows
-    Path imagePath = Paths.get(maperitivePathWindows, "output", "map" + map.getId().toString() + ".png");
-
     byte[] imageBytes = new byte[0];
     try {
       imageBytes = Files.readAllBytes(imagePath);
@@ -1556,6 +1573,22 @@ public class MapServiceImpl implements MapService {
 
     //the saved connections now have to be stored in one file
     int ticketNumber = 0;
+
+    //sort the "starting tickets" to the top of the list
+    Comparator<MapPointConnection> comparator = Comparator.comparingInt(value -> value.shortestPath);
+    connections.sort(comparator.reversed());
+
+    //exclude the starting ones from shuffling
+    List<MapPointConnection> biggestCards = new ArrayList<>(connections.subList(0, 6));
+
+    List<MapPointConnection> smallerCards = new ArrayList<>(connections.subList(6, connections.size()));
+
+    //shuffle and add in correct order
+    Collections.shuffle(smallerCards);
+    connections.clear();
+    connections.addAll(biggestCards);
+    connections.addAll(smallerCards);
+
     for (MapPointConnection mC: connections
          ) {
 
@@ -1606,8 +1639,9 @@ public class MapServiceImpl implements MapService {
       float nwY = map.getNorthWestBoundary().y;
       float seY = map.getSouthEastBoundary().y;
 
-      //calculate the size of the card
-      double width = CARD_FORMAT_WIDTH;
+      //calculate the size of the card for mercator projection
+      //card format is not the same as map therefore calculation with sqrt(2) for ratio
+      double width = CARD_FORMAT_HEIGHT*Math.sqrt(2);
       double height = CARD_FORMAT_HEIGHT;
 
       double mapLonLeft = nwX;
@@ -1627,14 +1661,14 @@ public class MapServiceImpl implements MapService {
       double svgDestX = pixelCoordinatesNext[0];
       double svgDestY = pixelCoordinatesNext[1];
 
-      //control the values to fit the card boundaries and fix circle to middle (circle radius is 5 mm)
-      svgX = svgX - 5;
-      if (svgX > CARD_FORMAT_WIDTH - 10) {
-        svgX = CARD_FORMAT_WIDTH - 10;
+      //control the values to fit the card boundaries and fix circle to middle (circle radius is 5 mm, ~2.8 is the border of the map)
+      svgX = svgX - 5 + 2.8;
+      if (svgX > CARD_FORMAT_WIDTH - (10 +2.8)) {
+        svgX = CARD_FORMAT_WIDTH - (10 +2.8);
       }
-      if (svgX < 0)
+      if (svgX < 0 + 2.8)
       {
-        svgX = 0;
+        svgX = 0 + 2.8;
       }
 
       svgY = svgY - 5;
@@ -1646,13 +1680,13 @@ public class MapServiceImpl implements MapService {
         svgY = 0;
       }
 
-      svgDestX = svgDestX - 5;
-      if (svgDestX > CARD_FORMAT_WIDTH - 10) {
-        svgDestX = CARD_FORMAT_WIDTH - 10;
+      svgDestX = svgDestX - 5 + 2.8;
+      if (svgDestX > CARD_FORMAT_WIDTH - (10 +2.8)) {
+        svgDestX = CARD_FORMAT_WIDTH - (10 +2.8);
       }
-      if (svgDestX < 0)
+      if (svgDestX < 0 + 2.8)
       {
-        svgDestX = 0;
+        svgDestX = 0 + 2.8;
       }
 
       svgDestY = svgDestY - 5;
@@ -1944,7 +1978,7 @@ public class MapServiceImpl implements MapService {
 
   //render the background image of the map through maperitive with set formatWidth
   //Linux
-  /*private void renderMap(Map map, int formatWidth)
+  private void renderMapLinux(Map map, int formatWidth)
   {
 
     // getting boundingBox values
@@ -1961,6 +1995,7 @@ public class MapServiceImpl implements MapService {
 
     Long id = map.getId();
 
+    //maperitive standard DPI value is 100
     int calcWidth = (int) (formatWidth * 100/ INCH_IN_MILLIMETERS);
 
     // create a maperitive script for automatic rendering
@@ -2023,10 +2058,10 @@ public class MapServiceImpl implements MapService {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
-  }*/
+  }
 
   //Windows
-  private void renderMap(Map map, int formatWidth)
+  private void renderMapWindows(Map map, int formatWidth)
   {
 
     // getting boundingBox values
@@ -2043,6 +2078,7 @@ public class MapServiceImpl implements MapService {
 
     Long id = map.getId();
 
+    //maperitive standard DPI value is 100
     int calcWidth = (int) (formatWidth * 100/ INCH_IN_MILLIMETERS);
 
     // create a maperitive script for automatic rendering
