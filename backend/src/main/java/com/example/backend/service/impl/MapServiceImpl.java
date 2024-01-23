@@ -1016,7 +1016,7 @@ public class MapServiceImpl implements MapService {
       String os = System.getProperty("os.name").toLowerCase();
       Path imagePath;
       if(os.contains("win")) {
-        //renderMapWindows(map, FORMATWIDTH);
+        renderMapWindows(map, FORMATWIDTH);
         imagePath = Paths.get(maperitivePathWindows, "output", "map" + map.getId().toString() + ".png");
       }
       else
