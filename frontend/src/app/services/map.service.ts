@@ -11,7 +11,7 @@ import {PDFDto} from "../dtos/pdf";
 })
 export class MapService {
 
-  private baseURI = 'http://127.0.0.1:8080/api';
+  private baseURI = 'http://34.125.209.83:8080/api';
 
   constructor(private httpClient: HttpClient) {
   }
