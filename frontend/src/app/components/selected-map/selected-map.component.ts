@@ -72,6 +72,7 @@ export class SelectedMapComponent implements OnInit{
     this.route.paramMap.subscribe(params => {
 
       const id = params.get('id');
+      const back = params.get('back');
 
       if(id != null)
       {
@@ -95,6 +96,10 @@ export class SelectedMapComponent implements OnInit{
               center: latLng(this.optionsSpec.center)
             };
             this.mapL.setView(this.options.center, this.options.zoom);
+            if(back == 'true')
+            {
+              this.loadCities();
+            }
           }
         })
       }
@@ -145,6 +150,9 @@ export class SelectedMapComponent implements OnInit{
                       }
                     })
                   }
+
+                  this.selectedCities.sort((a, b) => a.name < b.name ? -1 : 1)
+                  this.cities.sort((a, b) => a.name < b.name ? -1 : 1)
                   this.addCitiesToMap();
                   this.loadMapPoints();
                   this.loadingCities = false;
@@ -218,6 +226,10 @@ export class SelectedMapComponent implements OnInit{
     }
     this.cities.push(city);
 
+    this.selectedCities.sort((a, b) => a.name < b.name ? -1 : 1)
+    this.cities.sort((a, b) => a.name < b.name ? -1 : 1)
+
+
     this.layers = [];
     this.addCitiesToMap();
     this.loadMapPoints();
@@ -230,6 +242,10 @@ export class SelectedMapComponent implements OnInit{
       this.cities.splice(index,1);
     }
     this.selectedCities.push(city);
+
+    this.selectedCities.sort((a, b) => a.name < b.name ? -1 : 1)
+    this.cities.sort((a, b) => a.name < b.name ? -1 : 1)
+
 
     this.layers = [];
     this.addCitiesToMap();
@@ -244,6 +260,11 @@ export class SelectedMapComponent implements OnInit{
           this.cities = data;
           this.selectedCities = this.cities.slice(0,50);
           this.cities = this.cities.slice(50, this.cities.length+1);
+
+          this.selectedCities.sort((a, b) => a.name < b.name ? -1 : 1)
+          this.cities.sort((a, b) => a.name < b.name ? -1 : 1)
+
+
           this.layers = [];
           this.addCitiesToMap();
           this.loadMapPoints();

@@ -391,7 +391,7 @@ export class ColoredMapComponent implements OnInit {
   }
 
   stepBack(){
-    this.router.navigate(['map/selected/'+this.savedMap.id]);
+    this.router.navigate(['map/selected/'+this.savedMap.id, {back:'true'}]);
   }
 
   deleteCity()
