@@ -36,10 +36,10 @@ public class MapEndpoint {
     return mapService.create(createMapDto);
   }
 
-  @GetMapping()
+  @GetMapping
   @CrossOrigin()
   @ResponseStatus(HttpStatus.OK)
-  public List<CreateMapDto> getAllMap()
+  public List<CreateMapDto> getAllMaps()
   {
     return mapService.getAllMaps();
   }
