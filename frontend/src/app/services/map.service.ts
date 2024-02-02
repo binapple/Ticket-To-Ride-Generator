@@ -29,6 +29,15 @@ export class MapService {
   }
 
   /**
+   * loads all maps from the system
+   *
+   * @returns a mapDto List of the registered maps
+   */
+  getAllMaps(): Observable<MapDto[]> {
+    return this.httpClient.get<MapDto[]>(this.baseURI + '/maps');
+  }
+
+  /**
    * loads a map from the system
    *
    * @param id of map to fetch from the system
@@ -101,11 +110,12 @@ export class MapService {
    * creates the gameBoard and its ticketCards of a certain map
    *
    * @param id of map saved on server
+   * @param DPI render resolution for OSM Map-Image
    *
    * @returns a PDFDto containing gameBoard and ticketCards of the map
    */
-  createGameBoard(id: number): Observable<PDFDto> {
-    return this.httpClient.get<PDFDto>(this.baseURI + '/maps/gameBoard/create/'+id);
+  createGameBoard(id: number, map: MapDto): Observable<PDFDto> {
+    return this.httpClient.post<PDFDto>(this.baseURI + '/maps/gameBoard/create/'+id,map);
   }
 
   /**

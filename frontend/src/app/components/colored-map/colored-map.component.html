@@ -19,6 +19,7 @@
           [leafletOptions]="options"
           (leafletMapReady)="onMapReady($event)"
           [leafletLayers]="layers"
+          [leafletFitBounds]="getBounds()"
         >
         </div>
         </div>
@@ -30,7 +31,7 @@
         <button *ngIf="!creatingConnection && !deleteButton" class="btn btn-primary mx-1" (click)="createConnection()">Create New Connection</button>
         <button *ngIf="creatingConnection" class="btn btn-outline-danger mx-1" (click)="createConnection()">Cancel</button>
         <button class="btn btn-success mx-1" (click)="getGameBoard()">
-          <div *ngIf="!loadingGameBoard">Create Game Board</div>
+          <div *ngIf="!loadingGameBoard">Create Game Board!</div>
           <div *ngIf="loadingGameBoard">Creating Game Board
             <div class="spinner-border spinner-border-sm" role="status">
               <span class="visually-hidden">Loading...</span>
@@ -53,7 +54,16 @@
           To delete a city double-click on it.
           </div>
         </div>
-
+        <label for="dpi" class="my-1">Choose render DPI:</label>
+        <select [(ngModel)]="DPI" name="dpi" id="dpi" class="form-select" aria-label="DPI selection">
+          <option selected value="500">500 DPI</option>
+          <option value="400">400 DPI</option>
+          <option value="300">300 DPI</option>
+          <option value="200">200 DPI</option>
+          <option value="100">100 DPI</option>
+          <option value="96">96 DPI</option>
+          <option value="72">72 DPI</option>
+        </select>
       </div>
 
     </div>

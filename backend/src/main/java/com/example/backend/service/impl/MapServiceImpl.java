@@ -51,6 +51,7 @@ import com.example.backend.repository.MapRepository;
 import com.example.backend.repository.PDFRepository;
 import com.example.backend.service.MapService;
 import com.example.backend.type.Colorization;
+import com.example.backend.type.MapStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
@@ -101,8 +102,8 @@ public class MapServiceImpl implements MapService {
   private final PDFRepository pdfRepository;
 
   //these variables are used to change the length and height in millimeters of the resulting game plan (now it is set to DIN A0)
-  public static final int FORMATWIDTH = 1189;
-  public static final int FORMATHEIGHT = 841;
+  //public static final int FORMATWIDTH = 1189;
+  //public static final int FORMATHEIGHT = 841;
 
   //these variables are for the card sizes in millimeters
   public static final int CARD_FORMAT_WIDTH = 68;
@@ -122,15 +123,12 @@ public class MapServiceImpl implements MapService {
   public static final double INCH_IN_MILLIMETERS = 25.4;
 
   //Constant for deciding how big the raster image will be rendered
-  public static final int DPI = 500;
+  //public static final int DPI = 96;
   //getting folder path from application.properties
   @Value("${maperitive.folderpathLinux}")
   private String maperitivePathLinux;
   @Value("${maperitive.folderpathWindows}")
   private String maperitivePathWindows;
-
-  //SVG Constant for mm
-  public static final double SVGMMCONSTANT = DPI / INCH_IN_MILLIMETERS;
 
   @Autowired
   public MapServiceImpl(MapMapper mapMapper, MapRepository mapRepository, CityMapper cityMapper, CityRepository cityRepository, MapPointMapper mapPointMapper, MapPointRepository mapPointRepository,
@@ -149,18 +147,54 @@ public class MapServiceImpl implements MapService {
 
     Map map = mapMapper.createMapDtoToMap(createMapDto);
 
+    //setting default values for width and height (A0-Format)
+    if(map.getFormatHeight() == 0)
+    {
+      map.setFormatHeight(841);
+    }
+    if(map.getFormatWidth() == 0)
+    {
+      map.setFormatWidth(1189);
+    }
+    //when creating new map its status is selected
+    map.setStatus(MapStatus.SELECTED);
+
     map = mapRepository.save(map);
+
+    //empty names are set to Map+id
+    if(map.getName() == null)
+    {
+      map.setName("Map"+map.getId());
+      map = mapRepository.save(map);
+    }
+    else if(map.getName().isEmpty())
+    {
+      map.setName("Map"+map.getId());
+      map = mapRepository.save(map);
+    }
 
     return mapMapper.mapToCreateMapDto(map);
   }
 
-    @Override
-    public CreateMapDto get(Long id) {
-        Map map = mapRepository.getReferenceById(id);
-        return mapMapper.mapToCreateMapDto(map);
-    }
+  @Override
+  public List<CreateMapDto> getAllMaps() {
+    List<Map> mapList = mapRepository.findAll();
 
-    @Override
+    List<CreateMapDto> mapDtoList = new ArrayList<>();
+    for(Map m: mapList)
+    {
+      mapDtoList.add(mapMapper.mapToCreateMapDto(m));
+    }
+    return mapDtoList;
+  }
+
+  @Override
+  public CreateMapDto get(Long id) {
+      Map map = mapRepository.getReferenceById(id);
+      return mapMapper.mapToCreateMapDto(map);
+  }
+
+  @Override
   public List<CityDto> getInitialCities(Long id) {
 
     return getCityDtos(id, "city");
@@ -366,9 +400,12 @@ public class MapServiceImpl implements MapService {
       Set<MapPoint> mapPointsWithNeighbors = graph.vertexSet();
 
       //when using save mode the MapPoints are stored in the database, else it is only used as preview
+      //also the status of the map is updated
       if(save)
       {
           this.mapPointRepository.saveAll(mapPointsWithNeighbors);
+          map.setStatus(MapStatus.COLORIZED);
+          this.mapRepository.save(map);
       }
 
       List<MapPoint> toReturn = new ArrayList<>(mapPointsWithNeighbors);
@@ -400,9 +437,9 @@ public class MapServiceImpl implements MapService {
 
 
     //trainsize calculated off the set values
-    float trainsize = mapWidth * TRAINLENGTH / FORMATWIDTH;
+    float trainsize = mapWidth * TRAINLENGTH / map.getFormatWidth();
     //define a diameter, because cities have a circle around them
-    float cityDiameter = mapWidth * CITYDIAMETER / FORMATWIDTH;
+    float cityDiameter = mapWidth * CITYDIAMETER / map.getFormatWidth();
 
     float eight = trainsize * 8 + cityDiameter;
     float six = trainsize * 6 + cityDiameter;
@@ -615,9 +652,9 @@ public class MapServiceImpl implements MapService {
       float mapWidth = calculateDistancesFromCoordinateSystem(nwX, seaX);
 
       //trainsize calculated off the set values
-      float trainsize = mapWidth * TRAINLENGTH / FORMATWIDTH;
+      float trainsize = mapWidth * TRAINLENGTH / map.getFormatWidth();
       //define a diameter, because cities have a circle around them
-      float cityDiameter = mapWidth * CITYDIAMETER / FORMATWIDTH;
+      float cityDiameter = mapWidth * CITYDIAMETER / map.getFormatWidth();
 
 
       //find out how many edges the graph has
@@ -981,10 +1018,16 @@ public class MapServiceImpl implements MapService {
     }
 
   @Override
-  public PDFDto createGameBoard(Long id) {
+  public PDFDto createGameBoard(Long id, int DPI) {
 
     Map map = mapRepository.getReferenceById(id);
 
+    map.setDpi(DPI);
+    //set default DPI value if provided values do not work
+    if (map.getDpi() <= 0 || map.getDpi() > 500)
+    {
+      map.setDpi(500);
+    }
 
     if (!map.getMapPoints().isEmpty()) {
       //keep track what MapPoints are already drawn
@@ -1004,8 +1047,8 @@ public class MapServiceImpl implements MapService {
 
       //Size it to desired Format
       Element svgRoot = mergedDoc.getRootElement();
-      svgRoot.setAttributeNS(null, "width", String.valueOf(FORMATWIDTH)+"mm");
-      svgRoot.setAttributeNS(null, "height", String.valueOf(FORMATHEIGHT)+"mm");
+      svgRoot.setAttributeNS(null, "width", String.valueOf(map.getFormatWidth())+"mm");
+      svgRoot.setAttributeNS(null, "height", String.valueOf(map.getFormatHeight())+"mm");
 
 
       //create tickets
@@ -1016,12 +1059,12 @@ public class MapServiceImpl implements MapService {
       String os = System.getProperty("os.name").toLowerCase();
       Path imagePath;
       if(os.contains("win")) {
-        renderMapWindows(map, FORMATWIDTH);
+        renderMapWindows(map, map.getFormatWidth());
         imagePath = Paths.get(maperitivePathWindows, "output", "map" + map.getId().toString() + ".png");
       }
       else
       {
-        renderMapLinux(map, FORMATWIDTH);
+        renderMapLinux(map, map.getFormatWidth());
         imagePath = Paths.get(maperitivePathLinux, "output", "map" + map.getId().toString() + ".png");
       }
 
@@ -1029,8 +1072,8 @@ public class MapServiceImpl implements MapService {
 
       //Adding the rendered image to the empty svg
 
-      int calcWidth = (int) Math.floor(FORMATWIDTH * DPI / INCH_IN_MILLIMETERS);
-      int calcHeight = (int) Math.floor(FORMATHEIGHT * DPI / INCH_IN_MILLIMETERS);
+      int calcWidth = (int) Math.floor(map.getFormatWidth() * map.getDpi() / INCH_IN_MILLIMETERS);
+      int calcHeight = (int) Math.floor(map.getFormatHeight() * map.getDpi() / INCH_IN_MILLIMETERS);
 
       String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
       String xlinkNS = "http://www.w3.org/1999/xlink" ;
@@ -1049,8 +1092,8 @@ public class MapServiceImpl implements MapService {
       img.setAttributeNS(xlinkNS, "xlink:href", uri);
       img.setAttributeNS(null, "x", "0");
       img.setAttributeNS(null, "y", "0");
-      img.setAttributeNS(null, "width", String.valueOf(FORMATWIDTH)+"mm");
-      img.setAttributeNS(null, "height", String.valueOf(FORMATHEIGHT)+"mm");
+      img.setAttributeNS(null, "width", String.valueOf(map.getFormatWidth())+"mm");
+      img.setAttributeNS(null, "height", String.valueOf(map.getFormatHeight())+"mm");
       svgRoot.appendChild(img);
 
 
@@ -1152,8 +1195,8 @@ public class MapServiceImpl implements MapService {
                 float seY = map.getSouthEastBoundary().y;
 
                 //calculate the size of the board in pixels (DPI for SVGs are set by batik therefore 96)
-                double width = FORMATWIDTH*96/INCH_IN_MILLIMETERS;
-                double height = FORMATHEIGHT*96/INCH_IN_MILLIMETERS;
+                double width = map.getFormatWidth()*96/INCH_IN_MILLIMETERS;
+                double height = map.getFormatHeight()*96/INCH_IN_MILLIMETERS;
 
                   double mapLonLeft = nwX;
                 double mapLonRight = seaX;
@@ -1235,8 +1278,8 @@ public class MapServiceImpl implements MapService {
         float seY = map.getSouthEastBoundary().y;
 
         //calculate the size of the board in pixels (DPI for SVGs are set by batik therefore 96)
-        double width = FORMATWIDTH*96/INCH_IN_MILLIMETERS;
-        double height = FORMATHEIGHT*96/INCH_IN_MILLIMETERS;
+        double width = map.getFormatWidth()*96/INCH_IN_MILLIMETERS;
+        double height = map.getFormatHeight()*96/INCH_IN_MILLIMETERS;
 
         double mapLonLeft = nwX;
         double mapLonRight = seaX;
@@ -1277,7 +1320,7 @@ public class MapServiceImpl implements MapService {
 
     }
 
-    //save the gameboard to persistence
+    //save the gameboard to persistence and update map status
     File gameBoard = new File("merged.pdf");
 
     try {
@@ -1292,6 +1335,7 @@ public class MapServiceImpl implements MapService {
       pdf.setGameBoard(gameBoardBytes);
       pdf.setMap(map);
       pdfRepository.save(pdf);
+      map.setStatus(MapStatus.CREATED);
       map.setPdf(pdf);
       mapRepository.save(map);
     } catch (IOException e) {
@@ -1342,7 +1386,7 @@ public class MapServiceImpl implements MapService {
     float mapWidth = calculateDistancesFromCoordinateSystem(nwX, seaX);
 
     //trainsize calculated off the set values
-    float trainsize = mapWidth * TRAINLENGTH / FORMATWIDTH;
+    float trainsize = mapWidth * TRAINLENGTH / map.getFormatWidth();
 
     //make a graph out of the city MapPoints
     Graph<MapPoint, DefaultWeightedEdge> graph = this.generateGraphFromMap(mapId);
@@ -2000,15 +2044,15 @@ public class MapServiceImpl implements MapService {
 
     // create a maperitive script for automatic rendering
     String scriptContent = String.format(Locale.US,
-        "zoom-bounds bounds=%.15f,%.15f,%.15f,%.15f\n" +
+                                         "zoom-bounds bounds=%.15f,%.15f,%.15f,%.15f\n" +
             "set-print-bounds-geo bounds=%.15f,%.15f,%.15f,%.15f\n" +
             "set-setting name=map.decoration.attribution value=false\n" +
             "set-setting name=map.decoration.grid value=false\n" +
             "set-setting name=map.decoration.scale value=false\n" +
             "export-bitmap width=%d dpi=%d file="+ maperitivePathLinux +"/output/map%d.png",
-        minLong,minLat,maxLong,maxLat,
-        minLong,minLat,maxLong,maxLat,
-        calcWidth, DPI,id
+                                         minLong, minLat, maxLong, maxLat,
+                                         minLong, minLat, maxLong, maxLat,
+                                         calcWidth, map.getDpi(), id
         );
 
     //save the script
@@ -2078,20 +2122,20 @@ public class MapServiceImpl implements MapService {
 
     Long id = map.getId();
 
-    //maperitive standard DPI value is 100
+    //maperitive standard map.getDPI() value is 100
     int calcWidth = (int) (formatWidth * 100/ INCH_IN_MILLIMETERS);
 
     // create a maperitive script for automatic rendering
     String scriptContent = String.format(Locale.US,
-            "zoom-bounds bounds=%.15f,%.15f,%.15f,%.15f\n" +
+                                         "zoom-bounds bounds=%.15f,%.15f,%.15f,%.15f\n" +
                     "set-print-bounds-geo bounds=%.15f,%.15f,%.15f,%.15f\n" +
                     "set-setting name=map.decoration.attribution value=false\n" +
                     "set-setting name=map.decoration.grid value=false\n" +
                     "set-setting name=map.decoration.scale value=false\n" +
                     "export-bitmap width=%d dpi=%d file="+ maperitivePathWindows +"/output/map%d.png",
-            minLong,minLat,maxLong,maxLat,
-            minLong,minLat,maxLong,maxLat,
-            calcWidth, DPI,id
+                                         minLong, minLat, maxLong, maxLat,
+                                         minLong, minLat, maxLong, maxLat,
+                                         calcWidth, map.getDpi(), id
     );
 
     //save the script

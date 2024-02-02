@@ -14,9 +14,16 @@ public interface MapService {
    * Creates a new map in the system.
    *
    * @param createMapDto dto which contains all needed properties
-   * @return an CreateMapDto of the registered customer
+   * @return an CreateMapDto of the saved map
    */
   CreateMapDto create(CreateMapDto createMapDto);
+
+  /**
+   * Get all maps saved in the system
+   *
+   * @return a list of CreateMapDtos of all saved maps
+   */
+  List<CreateMapDto> getAllMaps();
 
   /**
    * Gets the cities of the Map from OpenStreetMap/Overpass API
@@ -83,9 +90,10 @@ public interface MapService {
    * Creates the GameBoard and TicketCards for a saved Map and its corresponding MapPoints
    *
    * @param id of the Map
+   * @param DPI print resolution of OSM image
    * @return a PDFDto containing the GameBoard and its corresponding TicketCards
    */
-  PDFDto createGameBoard(Long id);
+  PDFDto createGameBoard(Long id, int DPI);
 
    /**
    * Gets the GameBoard and Tickets as a PDFDto from as saved Map

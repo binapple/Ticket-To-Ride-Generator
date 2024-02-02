@@ -1,10 +1,11 @@
 import {Component} from '@angular/core';
-import {latLng, LatLng, tileLayer,} from 'leaflet';
 import * as L from 'leaflet';
+import {latLng, LatLng, tileLayer,} from 'leaflet';
 import {Router} from "@angular/router";
 import {MapService} from "../../services/map.service";
 import {Point2D} from "../../dtos/point2d";
 import {MapDto} from "../../dtos/map";
+import {MapStatus} from "../../dtos/map-status";
 
 
 @Component({
@@ -35,10 +36,12 @@ export class MapComponent {
   zoomLevels = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ];
   lat = this.center.lat;
   lng = this.center.lng;
+  selectedFormat = 0;
+  name = "";
 
   leafletMap!: L.Map;
   emptyPoint: Point2D = new Point2D(0,0);
-  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0);
+  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0, MapStatus.SELECTED, 1189, 841, 96);
 
   //progress bar
   currentStep = 1;
@@ -80,6 +83,21 @@ export class MapComponent {
     const zoom = this.leafletMap.getZoom();
     const center = this.leafletMap.getCenter();
 
+    const format = this.selectedFormat;
+    //convert format to height and width
+    if(format == 2) {
+      this.savedMap.formatWidth = 594;
+      this.savedMap.formatHeight = 420;
+    } else if (format == 1) {
+      this.savedMap.formatWidth = 841;
+      this.savedMap.formatHeight = 594;
+    }else {
+      this.savedMap.formatWidth = 1189;
+      this.savedMap.formatHeight = 841;
+    }
+    //save name of map
+    this.savedMap.name = this.name;
+
     const northEastBoundary: Point2D = new Point2D(northEast.lng, northEast.lat);
     const northWestBoundary: Point2D = new Point2D(northWest.lng, northWest.lat);
     const southEastBoundary: Point2D = new Point2D(southEast.lng, southEast.lat);
@@ -109,4 +127,9 @@ export class MapComponent {
   onMapReady(map: L.Map) {
     this.leafletMap = map;
   }
+
+  stepBack(){
+    this.router.navigate(['maps']);
+  }
+
 }

@@ -1,0 +1,33 @@
+<div class="card">
+  <div class="card-body">
+    <div class="row">
+      <div class="col">
+    <h1>Ticket-To-Ride-Generator</h1></div>
+      <div class="col-auto">
+      <a href="/map" class="btn btn-primary">Create new Map <i class="bi bi-plus-lg"></i></a>
+      </div>
+    </div>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      <div class="col" *ngFor="let map of savedMaps">
+        <div class="card">
+          <div
+            leaflet
+            style="height: 0; padding-bottom: calc(100% / 1.41421); width: 100%;"
+            [leafletLayers]="[tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'Open Street Map'})]"
+            [leafletFitBounds]="getBounds(map)"
+            [leafletOptions]="options"
+            id="{{'map-' + map.id}}"
+          ></div>
+          <div class="card-body">
+          <h5 class="card-title">{{map.name}}</h5>
+          <p>Progress: <br>{{convertStatusToText(map.status)}}</p>
+            <a *ngIf="map.status===MapStatus.SELECTED" href="{{'/map/selected/' + map.id}}" class="btn btn-secondary">Select your Cities</a>
+            <a *ngIf="map.status===MapStatus.COLORIZED" href="{{'/map/colorized/' + map.id}}" class="btn btn-primary">Edit your Connections</a>
+            <a *ngIf="map.status===MapStatus.CREATED" href="{{'/map/gameBoard/' + map.id}}" class="btn btn-success">View your Gameboard</a>
+        </div>
+      </div>
+      </div>
+    </div>
+
+  </div>
+</div>

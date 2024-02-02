@@ -9,7 +9,8 @@ import {Colorization} from "../../dtos/colorization";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {MapPointEditModalComponent} from "./map-point-edit-modal/map-point-edit-modal.component";
 import {MapPointService} from "../../services/map-point.service";
-import {dateComparator} from "@ng-bootstrap/ng-bootstrap/datepicker/datepicker-tools";
+import {MapStatus} from "../../dtos/map-status";
+import * as L from "leaflet";
 
 @Component({
   selector: 'app-colored-map',
@@ -44,12 +45,13 @@ export class ColoredMapComponent implements OnInit {
   };
 
   emptyPoint: Point2D = new Point2D(0, 0);
-  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0);
+  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0, MapStatus.SELECTED, 1189, 841, 96);
   layers = [
     circle([46.95, -122], {radius: 0}),
     polyline([[0, 0]]),
   ];
   mappedMPs = new Map<number, MapPointDto>();
+  DPI = 500;
 
   //used for new connections and deleting cities
   cityMapPoints: MapPointDto[] = [];
@@ -381,7 +383,9 @@ export class ColoredMapComponent implements OnInit {
 
   getGameBoard() {
     this.loadingGameBoard = true;
-    this.mapService.getGameBoard(this.savedMap.id).subscribe({
+    this.savedMap.dpi = Number(this.DPI);
+    console.log(this.savedMap);
+    this.mapService.createGameBoard(this.savedMap.id, this.savedMap).subscribe({
       next: data => {
         this.loadingGameBoard = false;
         this.router.navigate(['/map/gameBoard/'+this.savedMap.id], {state:{data: data}})
@@ -409,5 +413,14 @@ export class ColoredMapComponent implements OnInit {
       this.deleteButton = false;
       this.drawMapPoints(false);
     }
+  }
+
+  getBounds() {
+    const northWest = this.savedMap.northWestBoundary;
+    const southEast = this.savedMap.southEastBoundary;
+
+    const bounds = L.latLngBounds(latLng(northWest.y,northWest.x),latLng(southEast.y, southEast.x));
+
+    return bounds;
   }
 }

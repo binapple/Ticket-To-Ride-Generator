@@ -10,13 +10,13 @@ import com.example.backend.endpoint.dto.PDFDto;
 import com.example.backend.service.MapService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,6 +35,15 @@ public class MapEndpoint {
   public CreateMapDto createMap(@RequestBody CreateMapDto createMapDto) {
     return mapService.create(createMapDto);
   }
+
+  @GetMapping()
+  @CrossOrigin()
+  @ResponseStatus(HttpStatus.OK)
+  public List<CreateMapDto> getAllMap()
+  {
+    return mapService.getAllMaps();
+  }
+
 
   @GetMapping(value = "/{id}")
   @CrossOrigin()
@@ -106,11 +115,11 @@ public class MapEndpoint {
     return cityDtoList;
   }
 
-  @GetMapping (value = "/gameBoard/create/{id}")
+  @PostMapping (value = "/gameBoard/create/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
   @CrossOrigin ()
   @ResponseStatus(HttpStatus.OK)
-  public PDFDto createGameBoard(@PathVariable Long id) {
-  return mapService.createGameBoard(id);
+  public PDFDto createGameBoard(@PathVariable Long id, @RequestBody CreateMapDto mapDto) {
+  return mapService.createGameBoard(id, mapDto.getDpi());
   }
 
   @GetMapping (value = "/gameBoard/{id}")
@@ -122,7 +131,7 @@ public class MapEndpoint {
 
     if(pdfDto.getGameBoard() == null || pdfDto.getTicketCards() == null || pdfDto.getId() == null)
     {
-      pdfDto = mapService.createGameBoard(id);
+      pdfDto = mapService.createGameBoard(id, 500);
     }
 
     return pdfDto;

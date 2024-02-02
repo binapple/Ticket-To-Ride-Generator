@@ -3,10 +3,10 @@ import {MapDto} from "../../dtos/map";
 import {Point2D} from "../../dtos/point2d";
 import {ActivatedRoute, Router} from "@angular/router";
 import {PDFDto} from "../../dtos/pdf";
-import {DomSanitizer, SafeResourceUrl} from "@angular/platform-browser";
+import {DomSanitizer} from "@angular/platform-browser";
 import {MapService} from "../../services/map.service";
 import {Browser} from "leaflet";
-import win = Browser.win;
+import {MapStatus} from "../../dtos/map-status";
 
 @Component({
   selector: 'app-game-board',
@@ -17,7 +17,7 @@ export class GameBoardComponent implements OnInit{
 
   pdfDto: PDFDto = new PDFDto(0,undefined, undefined);
   emptyPoint: Point2D = new Point2D(0, 0);
-  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0);
+  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0, MapStatus.SELECTED, 1198, 841, 96);
   gameBoardSource: any;
   ticketCardsSource: any;
 

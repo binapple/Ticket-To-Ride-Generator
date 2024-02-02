@@ -11,7 +11,8 @@
     <div class="row">
 
       <!-- Map -->
-      <div class="col-12 mb-3 text-center">
+      <div class="col-12">
+        <div class="mb-3">
         <div
           leaflet
           style="height: 0; padding-bottom: calc(100% / 1.41421); width: 100%;"
@@ -24,49 +25,59 @@
         >
         </div>
       </div>
+        <button class="btn btn-outline-primary mx-1" (click)="stepBack()">Go to list of Maps</button>
+        <button (click)="selectedMap()" class="btn btn-success mx-1">Use this Map!</button>
 
-      <!-- Control Form -->
-      <div class="col col-md-6 col-lg-4">
-        <div class="col-12 mb-3">
+
+        <div class="col-12 my-3">
           Pan and zoom on the map until it fits! <br>
-        You can also manually enter a center for the map:
+          You can also manually enter a center for the map:
         </div>
+      <!-- Control Form -->
+      <div class="col">
+
         <form>
           <!-- Zoom Levels -->
-          <div class="form-group row">
-            <label class="col-4 col-form-label text-right">Zoom</label>
+          <div class="form-group row my-1">
+            <label for="zoom" class="col-form-label col-3">Zoom</label>
             <div class="col">
-              <select class="form-control" name="zoom" [(ngModel)]="formZoom" required>
+              <select class="form-control" id="zoom" name="zoom" [(ngModel)]="formZoom" required>
                 <option *ngFor="let z of zoomLevels" [value]="z">{{ z }}</option>
               </select>
             </div>
           </div>
 
           <!-- Lat/Long -->
-          <div class="form-group row">
-            <label class="col-4 col-form-label text-right">Latitude</label>
+          <div class="form-group row my-1">
+            <label for="lat" class="col-3 col-form-label">Latitude</label>
             <div class="col">
-              <input type="text" class="form-control" name="lat" [(ngModel)]="lat" required>
+              <input type="text" class="form-control" id="lat" name="lat" [(ngModel)]="lat" required>
             </div>
           </div>
-          <div class="form-group row">
-            <label class="col-4 col-form-label text-right">Longitude</label>
+          <div class="form-group row my-1">
+            <label for="lng" class="col-3 col-form-label">Longitude</label>
             <div class="col">
-              <input type="text" class="form-control" name="lng" [(ngModel)]="lng" required>
+              <input type="text" class="form-control" id="lng" name="lng" [(ngModel)]="lng" required>
             </div>
           </div>
 
           <div class="form-group row">
-            <div class="col offset-4">
-              <div class="clearfix">
+            <div class="col offset-3">
                 <button type="button" class="btn btn-outline-primary" (click)="doApply()">Apply Form Values</button>
-              </div>
             </div>
           </div>
+          <label for="format" class="my-1">Choose your gameboard format:</label>
+          <select [(ngModel)]="selectedFormat" name="format" id="format" class="form-select" aria-label="DIN-A-Format selection">
+            <option selected value="0">A0 (1189 x 841 mm)</option>
+            <option value="1">A1 (841 x 594 mm)</option>
+            <option value="2">A2 (594 x 420 mm)</option>
+          </select>
+          <label for="name" class="my-1">Choose a name for your map:</label>
+          <input type="text" id="name" class="form-control" name="name" placeholder="Map name" [(ngModel)]="name" required>
         </form>
       </div>
 
     </div>
-    <button (click)="selectedMap()" class="btn btn-success col-12 mt-3">Use this Map!</button>
+  </div>
   </div>
 </div>

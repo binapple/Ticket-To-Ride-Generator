@@ -7,6 +7,8 @@ import {Point2D} from "../../dtos/point2d";
 import {City} from "../../dtos/city";
 import {MapPointDto} from "../../dtos/map-point";
 import {Colorization} from "../../dtos/colorization";
+import {MapStatus} from "../../dtos/map-status";
+import * as L from "leaflet";
 
 
 @Component({
@@ -40,7 +42,7 @@ export class SelectedMapComponent implements OnInit{
   };
 
   emptyPoint: Point2D = new Point2D(0,0);
-  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0);
+  savedMap = new MapDto(0, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, this.emptyPoint, 0, MapStatus.SELECTED, 1189, 841, 96);
   mapLoaded = false;
   cities: City[] = [];
   selectedCities: City[] = [];
@@ -319,6 +321,16 @@ export class SelectedMapComponent implements OnInit{
         }
       )
     }
+  }
+
+  getBounds() {
+
+    const northWest = this.savedMap.northWestBoundary;
+    const southEast = this.savedMap.southEastBoundary;
+
+    const bounds = L.latLngBounds(latLng(northWest.y,northWest.x),latLng(southEast.y, southEast.x));
+
+    return bounds;
   }
 
   colorMap() {
