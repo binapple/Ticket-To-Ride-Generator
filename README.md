@@ -30,20 +30,16 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/binapple/Ticket-To-Ride-Generator">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+  <a href="https://www.tuwien.at/">
+    <img src="TU_Signet_RGB.svg" alt="Logo" width="80" height="80">
   </a>
 
 <h3 align="center">Ticket-To-Ride-Generator</h3>
 
   <p align="center">
-    project_description
+    11730471 <br />
+    033 533 Medizinische Informatik
     <br />
-    <a href="https://github.com/binapple/Ticket-To-Ride-Generator"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/binapple/Ticket-To-Ride-Generator">View Demo</a>
-    ·
     <a href="https://github.com/binapple/Ticket-To-Ride-Generator/issues">Report Bug</a>
     ·
     <a href="https://github.com/binapple/Ticket-To-Ride-Generator/issues">Request Feature</a>
@@ -78,12 +74,18 @@
   </ol>
 </details>
 
-
-
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+---
+
+This project is based on the game Ticket to Ride (European edition). The goal is to provide a gameboard based on the selection of a part of Open Street Map. This includes:
+- an interactive selection of the map itself
+- the generation of a typical grid between the biggest cities and towns of the selected map 
+  - including distribution of colors, joker- and tunnel-fields
+- an editor to finalize the railway grid with drag-and-drop setting
+- generation of ticket cards with long and short "lines"
+- a generation of a printable PDF up to DIN-A0-Format of the finished gameboard, and a printable PDF of the ticket cards 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -309,7 +310,61 @@ public class MapServiceImpl implements MapService {
       throw new RuntimeException("IOException " + e.getMessage());
     }
 
-    return cityMapper.cityListToCityDtoList(cityRepository.findCitiesByMapsId(id));
+    //reducing clusters by sorting the city list by population
+    //then checking if city is too close to other cities
+    List<City> populationSorted = cityRepository.findCitiesByMapsId(id);
+    populationSorted.sort(
+        (o1, o2) -> o2.getPopulation().compareTo(o1.getPopulation())
+    );
+
+    //calculate the ratio of the current map
+    float nwX = map.getNorthWestBoundary().x;
+    float seaX = map.getSouthEastBoundary().x;
+
+
+    float mapWidth = calculateDistancesFromCoordinateSystem(nwX, seaX);
+
+    //trainsize calculated off the set values
+    float trainsize = mapWidth * TRAINLENGTH / map.getFormatWidth();
+    //define a diameter, because cities have a circle around them
+    float cityDiameter = mapWidth * CITYDIAMETER / map.getFormatWidth();
+
+    float checksize = trainsize + cityDiameter;
+
+    Set<City> checkList = new LinkedHashSet<>();
+
+    //50 get recommended cities
+    int count = 0;
+    for(City c : populationSorted)
+    {
+      //this check ensures that only cities are added that are far enough from the
+      boolean checking = false;
+      for(City check : checkList)
+      {
+        if(c.getLocation().distance(check.getLocation()) < checksize){
+          checking = true;
+          break;
+        }
+      }
+
+      if(!checking)
+      {
+        checkList.add(c);
+        count++;
+      }
+
+      if (count >= 50)
+      {
+        break;
+      }
+    }
+
+    checkList.addAll(populationSorted);
+
+    List<City> returnList = checkList.stream().toList();
+
+
+    return cityMapper.cityListToCityDtoList(returnList);
   }
 
   @Override
