@@ -79,6 +79,10 @@
 
 ---
 
+As part of a bachelor thesis this project is implemented as a prototype.
+
+### Task-Assignment
+
 This project is based on the game Ticket to Ride (European edition). The goal is to provide a gameboard based on the selection of a part of Open Street Map. This includes:
 - an interactive selection of the map itself
 - the generation of a typical grid between the biggest cities and towns of the selected map 
@@ -89,17 +93,29 @@ This project is based on the game Ticket to Ride (European edition). The goal is
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+### Use-Case Diagram
 
+![Use-Case Diagram Image](Use-Case.png)
+
+### Class Diagram
+
+![Class Diagram Image](Class.png)
+
+### Worktime-Tracking (in German)
+
+[Timetracking](Zeitliste.md)
+
+## Implementation 
 
 ### Built With
 
-
+* [![SpringBoot][Spring.com]][Spring-url]
+* [![Maven][Maven.com]][Maven-url]
 * [![Angular][Angular.io]][Angular-url]
 * [![Leaflet][Leaflet.com]][Leaflet-url]
 * [![Bootstrap][Bootstrap.com]][Bootstrap-url]
 * [![OpenJDK][Java.com]][Java-url]
-* [![Maven][Maven.com]][Maven-url]
-* [![SpringBoot][Spring.com]][Spring-url]
+
 
 
 
@@ -107,7 +123,21 @@ This project is based on the game Ticket to Ride (European edition). The goal is
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+### Known Bugs
 
+Cities and therefore MapPoints are stored with their geographical location.
+Those are also used in the calculations for fitting in connections between them.
+This results in different spaces between finished train-connections.
+For correctly placing the train-squares on the rendered OSM map a so called "Mercator-Projection" is used.
+This mercator projection could be used earlier when creating MapPoints from Cities for example, but
+would lead to more problems when visually showing with leaflet in the frontend (as leaflet uses geographical not projected values)
+
+As this is a prototype, input validation and error handling are not really prioritized,
+therefore wrong data passed to the backend can result in unintended behaviour.
+
+### Unique Implementation-Details
+
+During the first review of the assignment, I thought that graphs will be a huge help. For finding a 
 
 <!-- GETTING STARTED -->
 ## Getting Started
