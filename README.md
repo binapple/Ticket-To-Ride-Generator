@@ -158,7 +158,7 @@ The goal is to provide a gameboard based on the selection of a part of **[Open S
 
 ### Worktime-Tracking (in German)
 
-[Timetracking](Zeitliste.md)
+**[Timetracking](Zeitliste.md)**
 
 ## Implementation 
 
@@ -187,37 +187,37 @@ Those are also used in the calculations for fitting in connections between them.
 This results in different spaces between finished train-connections.
 For correctly placing the train-squares on the rendered OSM map a so called "Mercator-Projection" is used.
 This mercator projection could be used earlier when creating MapPoints from Cities for example, but
-would lead to more problems when visually showing with leaflet in the frontend (as leaflet uses geographical not projected values)
+would lead to more problems when visually showing with leaflet in the frontend (as leaflet uses geographical not projected values).
 
 As this is a prototype, input validation and error handling are not really prioritized,
 therefore wrong data passed to the backend can result in unintended behaviour.
 
-### Unique Implementation-Details
+### Unique Implementation Details
 
 During the first review of the assignment, graphs seemed like a helpful tool for implementation. 
 Graph theory is used to create a complete graph out of the chosen cities. 
 The resulting connections were then reduced to match the Ticket-To-Ride lengths and afterward filtered to not have cross-over sections.
 For creating the tickets and their corresponding values, which is the shortest path between them, Dijkstra-Algorithm has been used.
 
-The data, mainly the cities, their location and population, that are used in this program comes from **[Overpass Turbo](https://overpass-turbo.eu/)** API calls. 
+The data, mainly the cities, their location and population that are used in this program comes from **[Overpass Turbo](https://overpass-turbo.eu/)** API calls. 
 This allows smooth displaying of the geographical data used or generated through the program in **[Leaflet][Leaflet-url]**.
 
 For rendering the OSM Map **[Maperitive](http://maperitive.net/)** an external program is used.
-It can be started with scripts that enabled kind of an interface between java and the program.
-Afterward **[Apache Batik](https://xmlgraphics.apache.org/batik/)** is used for creating a complete SVG File out of smaller SVG-Files, each representing one Ticket-To-Ride field plus the rendered image as background. 
+It can be started with scripts that enabled something similar to an interface between java and the program.
+Afterward **[Apache Batik](https://xmlgraphics.apache.org/batik/)** is used for creating a complete SVG File out of smaller SVG-Files,
+each representing one Ticket-To-Ride field, plus the rendered image as background. 
 Then again Apache Batik is used to transcode the SVG-File into a complete PDF-File for potential printing. 
 The same approach is used for the Ticket-Cards, but they are not individually stored, rather than fit together in one file side-by-side.
 
 ### Potential enhancements
 
-As described in the [Known Bugs](#known-bugs) section the "Mercator-Projection" is used for changing geographical location data to a two-dimensional map.
+As described in the **[Known Bugs](#known-bugs)** section the "Mercator-Projection" is used for changing geographical location data to a two-dimensional map.
 For a more accurate way of placing the train fields this could be done earlier, when creating MapPoints,
 so that all the calculations are also done in the correct coordinate system. 
 For showing the results in the frontend on leaflet geographical locations are necessary, therefore a "reverse Mercator-Projection".
 Another approach would be to store geographical and "projected" data to each MapPoint or City.
 
-As Maperitive currently only supports one instance per executable file. 
-The creation of the gameboard process is currently not simultaneously runnable.
+As Maperitive currently only supports one instance per executable file, the creation of the gameboard process is currently not simultaneously runnable.
 This could be solved with different APIs for OSM map rendering, but research on the net found that this may be behind a paywall,
 whereas Maperitive allows big render-sizes and is available as open source.
 
