@@ -1,3 +1,4 @@
+<a name="readme-top"></a>
 # Project Time Tracking
 
 [Back to Start](README.md)
@@ -30,6 +31,8 @@ monatliche Arbeitszeit: 12h 32m
 - Konzept Fertigstellung;
 - Statusbericht;
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Mai 2023
 
 monatliche Arbeitszeit: 19h 13m
@@ -54,6 +57,8 @@ monatliche Arbeitszeit: 19h 13m
 
 **28.05.2023 19:50 - 21:00; (1h 10m)**
 - Dependency Bug Suche in Spring;
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Juni 2023
 
@@ -87,6 +92,8 @@ monatliche Arbeitszeit: 23h 48m
 **28.06.2023 16:50 - 19:10; (2h 20m)**
 - Erste Schritte für den Zugverbindungsalgorithmus im backend;
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Juli 2023
 
 monatliche Arbeitszeit: 18h 30m
@@ -112,6 +119,8 @@ monatliche Arbeitszeit: 18h 30m
 
 **29.07.2023 08:44 - 11:59; (3h 15m)**
 - Streckenvorschlag auf planare Ergebnisse erweitert;
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## August 2023
 
@@ -151,6 +160,8 @@ monatliche Arbeitszeit: 34h 23m
 - Tunnelfelder und Jokerfelder eingefügt bei farblosen Verbindungen;
 - Darstellung von Jokerfeldern im Frontend;
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## September 2023
 
 monatliche Arbeitszeit: 8h 29m
@@ -167,6 +178,8 @@ monatliche Arbeitszeit: 8h 29m
 
 **27.09.2023 09:39 - 11:50; (2h 11m)**
 - Anfänge für Editierung von Map Points erstellt;
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Oktober 2023
 
@@ -218,6 +231,8 @@ monatliche Arbeitszeit: 42h 21m
 **30.10.2023 13:47 - 15:20; (1h 33m)**
 - Rendering von OSM Recherche;
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## November 2023
 
 monatliche Arbeitszeit: 56h 41m
@@ -267,6 +282,8 @@ monatliche Arbeitszeit: 56h 41m
 - PDFs auch in neuem Fenster öffnen lassen (für manche Browser bei zu großen PDFs);
 - README.md Anfänge;
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Dezember 2023
 
 monatliche Arbeitszeit: 27h 35m
@@ -299,6 +316,8 @@ monatliche Arbeitszeit: 27h 35m
 
 **29.12.2023 16:38 - 18:08; 19:24 - 20:55; (3h 1m)**
 - Backend auf dem Testserver zum Laufen bringen (Kommunikation mit frontend herstellen)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Januar 2024
 
@@ -350,7 +369,9 @@ monatliche Arbeitszeit: 40h 51m
 
 total bis inklusive Januar 2024: 317h 20m
 
-## Ferbruar 2024
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## Februar 2024
 
 monatliche Arbeitszeit: 
 
@@ -361,3 +382,5 @@ monatliche Arbeitszeit:
 **02.02.2024 11:52 - 15:27; (3h 35m)**
 - Map-Liste besser gestalten;
 - Map-Zoom responsive machen; 
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
