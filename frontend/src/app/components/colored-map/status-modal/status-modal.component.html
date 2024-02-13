@@ -1,0 +1,13 @@
+<div class="modal-header">
+  <h4 class="modal-title">Progress Status</h4>
+  <button type="button" class="close btn" aria-label="Close" (click)="closeModal()">
+    <span aria-hidden="true"><i class="bi bi-x-circle"></i></span>
+  </button>
+</div>
+<div class="modal-body">
+  <p>{{ statusDto.message }}</p>
+    <ngb-progressbar class="mb-3" type="primary" [value]="progressValue" [max]="maxProgress" [striped]="true" [animated]="true"
+    ></ngb-progressbar
+    >
+
+</div>

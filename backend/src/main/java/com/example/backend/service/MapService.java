@@ -6,6 +6,7 @@ import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
 import com.example.backend.endpoint.dto.MapPointDto;
 import com.example.backend.endpoint.dto.PDFDto;
+import com.example.backend.endpoint.dto.StatusDto;
 
 public interface MapService {
 
@@ -103,4 +104,12 @@ public interface MapService {
    */
   PDFDto getGameBoard(Long id);
 
+
+  /**
+   * Gets the status of a Maps progress when creating tickets and gameboards
+   *
+   * @param id of the Map
+   * @return a StatusDto that contains a progress message
+   */
+  StatusDto getStatus(Long id);
 }

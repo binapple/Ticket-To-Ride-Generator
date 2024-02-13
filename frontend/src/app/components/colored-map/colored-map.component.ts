@@ -11,6 +11,7 @@ import {MapPointEditModalComponent} from "./map-point-edit-modal/map-point-edit-
 import {MapPointService} from "../../services/map-point.service";
 import {MapStatus} from "../../dtos/map-status";
 import * as L from "leaflet";
+import {StatusModalComponent} from "./status-modal/status-modal.component";
 
 @Component({
   selector: 'app-colored-map',
@@ -385,8 +386,14 @@ export class ColoredMapComponent implements OnInit {
     this.loadingGameBoard = true;
     this.savedMap.dpi = Number(this.DPI);
     console.log(this.savedMap);
+
+    const modalRef = this.modalService.open(StatusModalComponent, {backdrop: 'static', keyboard: false});
+    modalRef.componentInstance.id = this.savedMap.id;
+
     this.mapService.createGameBoard(this.savedMap.id, this.savedMap).subscribe({
       next: data => {
+        modalRef.close();
+
         this.loadingGameBoard = false;
         this.router.navigate(['/map/gameBoard/'+this.savedMap.id], {state:{data: data}})
       }

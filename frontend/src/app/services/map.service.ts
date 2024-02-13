@@ -5,6 +5,7 @@ import {Observable} from "rxjs";
 import {City} from "../dtos/city";
 import {MapPointDto} from "../dtos/map-point";
 import {PDFDto} from "../dtos/pdf";
+import {StatusDto} from "../dtos/status";
 
 @Injectable({
   providedIn: 'root'
@@ -128,5 +129,16 @@ export class MapService {
    */
   getGameBoard(id: number): Observable<PDFDto> {
     return this.httpClient.get<PDFDto>(this.baseURI + '/maps/gameBoard/'+id);
+  }
+
+
+  /**
+   * Gets the status of a Maps progress when creating tickets and gameboards
+   *
+   * @param id of the Map
+   * @return a StatusDto that contains a progress message
+   */
+  getStatus(id:number): Observable<StatusDto> {
+    return this.httpClient.get<StatusDto>(this.baseURI + '/maps/status/' +id);
   }
 }

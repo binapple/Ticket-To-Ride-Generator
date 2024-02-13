@@ -28,7 +28,7 @@ export class SelectedMapComponent implements OnInit{
 
   // Leaflet options
   options = {
-    layers: [ tileLayer(this.optionsSpec.layers[0].url, { attribution: this.optionsSpec.layers[0].attribution }) ],
+    layers: [ tileLayer(this.optionsSpec.layers[0].url, { attribution: this.optionsSpec.layers[0].attribution, noWrap: true }) ],
     zoom: this.optionsSpec.zoom,
     zoomControl: false,
     dragging: false,
@@ -85,7 +85,7 @@ export class SelectedMapComponent implements OnInit{
             this.optionsSpec.center = [this.savedMap.center.y, this.savedMap.center.x];
             this.optionsSpec.zoom = this.savedMap.zoom;
             this.options = {
-              layers: [tileLayer(this.optionsSpec.layers[0].url, {attribution: this.optionsSpec.layers[0].attribution})],
+              layers: [tileLayer(this.optionsSpec.layers[0].url, {attribution: this.optionsSpec.layers[0].attribution, noWrap: true})],
               zoom: this.optionsSpec.zoom,
               zoomControl: false,
               dragging: false,

@@ -39,6 +39,7 @@ import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
 import com.example.backend.endpoint.dto.MapPointDto;
 import com.example.backend.endpoint.dto.PDFDto;
+import com.example.backend.endpoint.dto.StatusDto;
 import com.example.backend.endpoint.mapper.CityMapper;
 import com.example.backend.endpoint.mapper.MapMapper;
 import com.example.backend.endpoint.mapper.MapPointMapper;
@@ -53,6 +54,7 @@ import com.example.backend.repository.PDFRepository;
 import com.example.backend.service.MapService;
 import com.example.backend.type.Colorization;
 import com.example.backend.type.MapStatus;
+import com.example.backend.type.ProgressStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
@@ -160,19 +162,28 @@ public class MapServiceImpl implements MapService {
     //when creating new map its status is selected
     map.setStatus(MapStatus.SELECTED);
 
+    //save map to get id from backend
     map = mapRepository.save(map);
 
     //empty names are set to Map+id
     if(map.getName() == null)
     {
       map.setName("Map"+map.getId());
-      map = mapRepository.save(map);
     }
     else if(map.getName().isEmpty())
     {
       map.setName("Map"+map.getId());
-      map = mapRepository.save(map);
     }
+
+    //create initially empty PDF
+    PDF emptyPdf = new PDF();
+    emptyPdf.setMap(map);
+    emptyPdf.setStatus(ProgressStatus.NotStarted);
+    map.setPdf(emptyPdf);
+
+    //saving all changes to persistence
+    pdfRepository.save(emptyPdf);
+    map = mapRepository.save(map);
 
     return mapMapper.mapToCreateMapDto(map);
   }
@@ -1077,6 +1088,19 @@ public class MapServiceImpl implements MapService {
 
     Map map = mapRepository.getReferenceById(id);
 
+    PDF pdf = map.getPdf();
+
+    //check used for Test-Data
+    if(pdf == null)
+    {
+      pdf = new PDF();
+      pdf.setMap(map);
+      pdf.setStatus(ProgressStatus.NotStarted);
+      map.setPdf(pdf);
+      pdfRepository.save(pdf);
+      mapRepository.save(map);
+    }
+
     map.setDpi(DPI);
     //set default DPI value if provided values do not work
     if (map.getDpi() <= 0 || map.getDpi() > 500)
@@ -1109,6 +1133,10 @@ public class MapServiceImpl implements MapService {
       //create tickets
       createTicketCards(map.getId());
 
+      //update PDF status
+      pdf.setStatus(ProgressStatus.GameBoardRender);
+      pdfRepository.save(pdf);
+
       //Render the big image in maperitive
       //change method and image path based on OS
       String os = System.getProperty("os.name").toLowerCase();
@@ -1123,6 +1151,9 @@ public class MapServiceImpl implements MapService {
         imagePath = Paths.get(maperitivePathLinux, "output", "map" + map.getId().toString() + ".png");
       }
 
+      //update PDF status
+      pdf.setStatus(ProgressStatus.GameBoardSVG);
+      pdfRepository.save(pdf);
 
 
       //Adding the rendered image to the empty svg
@@ -1370,6 +1401,11 @@ public class MapServiceImpl implements MapService {
       }
 
       saveSVGDocument(mergedDoc, "merged.svg");
+
+      //update PDF status
+      pdf.setStatus(ProgressStatus.GameBoardPDF);
+      pdfRepository.save(pdf);
+
       convertSVGtoPDF(mergedDoc, "merged.pdf");
 
 
@@ -1381,7 +1417,7 @@ public class MapServiceImpl implements MapService {
     try {
       byte[] gameBoardBytes = Files.readAllBytes(gameBoard.toPath());
 
-      PDF pdf = map.getPdf();
+      pdf = map.getPdf();
       if (pdf == null)
       {
         pdf = new PDF();
@@ -1389,6 +1425,8 @@ public class MapServiceImpl implements MapService {
 
       pdf.setGameBoard(gameBoardBytes);
       pdf.setMap(map);
+      //update PDF status
+      pdf.setStatus(ProgressStatus.Finished);
       pdfRepository.save(pdf);
       map.setStatus(MapStatus.CREATED);
       map.setPdf(pdf);
@@ -1432,6 +1470,11 @@ public class MapServiceImpl implements MapService {
 
   private void createTicketCards(Long mapId) {
     Map map = mapRepository.getReferenceById(mapId);
+
+    //update PDF status
+    PDF pdf = map.getPdf();
+    pdf.setStatus(ProgressStatus.TicketRender);
+    pdfRepository.save(pdf);
 
     //calculate the ratio of the current map
     float nwX = map.getNorthWestBoundary().x;
@@ -1506,6 +1549,10 @@ public class MapServiceImpl implements MapService {
       renderMapLinux(map, CARD_FORMAT_WIDTH);
       imagePath = Paths.get(maperitivePathLinux, "output", "map" + map.getId().toString() + ".png");
     }
+
+    //update PDF status
+    pdf.setStatus(ProgressStatus.TicketSVG);
+    pdfRepository.save(pdf);
 
     int calcWidth = (int) Math.floor(CARD_FORMAT_WIDTH);
     int calcHeight = (int) Math.floor(CARD_FORMAT_HEIGHT);
@@ -1885,6 +1932,11 @@ public class MapServiceImpl implements MapService {
     }
 
     saveSVGDocument(mergedDoc, "tickets.svg");
+
+    //update PDF status
+    pdf.setStatus(ProgressStatus.TicketPDF);
+    pdfRepository.save(pdf);
+
     convertSVGtoPDF(mergedDoc, "tickets.pdf");
 
     //save the tickets to persistence
@@ -1892,7 +1944,7 @@ public class MapServiceImpl implements MapService {
 
     try {
       byte[] ticketCardsBytes = Files.readAllBytes(ticketCards.toPath());
-      PDF pdf = map.getPdf();
+      pdf = map.getPdf();
       if(pdf == null)
       {
         pdf = new PDF();
@@ -2245,7 +2297,46 @@ public class MapServiceImpl implements MapService {
     return dArray;
   }
 
- /* private void resizeSVGtoNewDPI(SVGDocument svgDocument, int originalDPI, int dpi) {
+  @Override
+  public StatusDto getStatus(Long id) {
+
+    Map map = mapRepository.getReferenceById(id);
+
+    PDF pdf = map.getPdf();
+
+    //check used for Test-Data
+    if(pdf == null)
+    {
+      pdf = new PDF();
+      pdf.setStatus(ProgressStatus.NotStarted);
+    }
+
+    ProgressStatus status = pdf.getStatus();
+
+    StatusDto statusDto = new StatusDto();
+
+    String message = "";
+
+    switch (status)
+    {
+      case Finished -> message = "Finished! -> Fetching PDFs from backend...";
+      case TicketPDF -> message = "Creating Ticket PDF";
+      case TicketSVG -> message = "Creating Ticket SVG";
+      case NotStarted -> message = "Starting process";
+      case GameBoardPDF -> message = "Creating GameBoard PDF";
+      case GameBoardSVG -> message = "Creating GameBoard SVG";
+      case TicketRender -> message = "Rendering Ticket Image";
+      case GameBoardRender -> message = "Rendering GameBoard Image";
+      default -> message = "";
+    }
+
+    statusDto.setMessage(message);
+    statusDto.setProgressStatus(status);
+
+    return statusDto;
+  }
+
+  /* private void resizeSVGtoNewDPI(SVGDocument svgDocument, int originalDPI, int dpi) {
     Element svgElement = svgDocument.getDocumentElement();
 
     // Get the original width and height

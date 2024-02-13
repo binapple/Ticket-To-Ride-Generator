@@ -1,5 +1,6 @@
 package com.example.backend.entitiy;
 
+import com.example.backend.type.ProgressStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,6 +14,8 @@ public class PDF {
   @Id
   @GeneratedValue(strategy =  GenerationType.IDENTITY)
   private Long id;
+
+  private ProgressStatus status;
 
   @Lob
   @Column(name = "gameBoard", columnDefinition = "BLOB")
@@ -55,5 +58,13 @@ public class PDF {
 
   public void setTicketCards(byte[] ticketCards) {
     this.ticketCards = ticketCards;
+  }
+
+  public ProgressStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(ProgressStatus status) {
+    this.status = status;
   }
 }

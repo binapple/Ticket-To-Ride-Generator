@@ -7,6 +7,7 @@ import com.example.backend.endpoint.dto.CityDto;
 import com.example.backend.endpoint.dto.CreateMapDto;
 import com.example.backend.endpoint.dto.MapPointDto;
 import com.example.backend.endpoint.dto.PDFDto;
+import com.example.backend.endpoint.dto.StatusDto;
 import com.example.backend.service.MapService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -117,6 +118,15 @@ public class MapEndpoint {
     }
 
     return pdfDto;
+  }
+
+  @GetMapping (value = "/status/{id}")
+  @CrossOrigin ()
+  @ResponseStatus(HttpStatus.OK)
+  public StatusDto getStatus(@PathVariable Long id) {
+    StatusDto status = mapService.getStatus(id);
+
+    return status;
   }
 
 }
