@@ -1554,8 +1554,9 @@ public class MapServiceImpl implements MapService {
     pdf.setStatus(ProgressStatus.TicketSVG);
     pdfRepository.save(pdf);
 
-    int calcWidth = (int) Math.floor(CARD_FORMAT_WIDTH);
-    int calcHeight = (int) Math.floor(CARD_FORMAT_HEIGHT);
+    //image has to be moved above the text ( about 11 mm above )
+    double calcHeight = CARD_FORMAT_HEIGHT - 11;
+    double calcWidth = calcHeight * Math.sqrt(2);
 
     String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
     String xlinkNS = "http://www.w3.org/1999/xlink";
@@ -1752,11 +1753,13 @@ public class MapServiceImpl implements MapService {
       ticketSvgRoot.setAttributeNS(null, "height", String.valueOf(CARD_FORMAT_HEIGHT) + "mm");
       ticketSvgRoot.setAttributeNS(null, "viewBox", "0 0 " + CARD_FORMAT_WIDTH + " " + CARD_FORMAT_HEIGHT);
 
+      //calculate offset for image (depends on width of image) and place it centered
+      double imageOffset = (CARD_FORMAT_WIDTH - calcWidth) / 2;
 
       //Adding the rendered image to the empty svg
       Element img = ticketMerge.createElementNS(svgNS, "image");
       img.setAttributeNS(xlinkNS, "xlink:href", uri);
-      img.setAttributeNS(null, "x", "0");
+      img.setAttributeNS(null, "x", String.valueOf(imageOffset));
       img.setAttributeNS(null, "y", "0");
       img.setAttributeNS(null, "width", String.valueOf(calcWidth));
       img.setAttributeNS(null, "height", String.valueOf(calcHeight));
@@ -1787,8 +1790,8 @@ public class MapServiceImpl implements MapService {
 
       //calculate the size of the card for mercator projection
       //card format is not the same as map therefore calculation with sqrt(2) for ratio
-      double width = CARD_FORMAT_HEIGHT*Math.sqrt(2);
-      double height = CARD_FORMAT_HEIGHT;
+      double width = calcWidth;
+      double height = calcHeight;
 
       double mapLonLeft = nwX;
       double mapLonRight = seaX;
@@ -1807,37 +1810,37 @@ public class MapServiceImpl implements MapService {
       double svgDestX = pixelCoordinatesNext[0];
       double svgDestY = pixelCoordinatesNext[1];
 
-      //control the values to fit the card boundaries and fix circle to middle (circle radius is 5 mm, ~2.8 is the border of the map)
-      svgX = svgX - 5 + 2.8;
-      if (svgX > CARD_FORMAT_WIDTH - (10 +2.8)) {
-        svgX = CARD_FORMAT_WIDTH - (10 +2.8);
+      //control the values to fit the card and map boundaries and fix circle to middle (circle radius is 5 mm)
+      svgX = svgX - 5 + imageOffset;
+      if (svgX > CARD_FORMAT_WIDTH - (10 + imageOffset)) {
+        svgX = CARD_FORMAT_WIDTH - (10 + imageOffset);
       }
-      if (svgX < 0 + 2.8)
+      if (svgX < (0 + imageOffset))
       {
-        svgX = 0 + 2.8;
+        svgX = (0 + imageOffset);
       }
 
       svgY = svgY - 5;
-      if (svgY > CARD_FORMAT_HEIGHT - 10) {
-        svgY = CARD_FORMAT_HEIGHT - 10;
+      if (svgY > calcHeight - 10) {
+        svgY = calcHeight - 10;
       }
       if (svgY < 0)
       {
         svgY = 0;
       }
 
-      svgDestX = svgDestX - 5 + 2.8;
-      if (svgDestX > CARD_FORMAT_WIDTH - (10 +2.8)) {
-        svgDestX = CARD_FORMAT_WIDTH - (10 +2.8);
+      svgDestX = svgDestX - 5 + imageOffset;
+      if (svgDestX > CARD_FORMAT_WIDTH - (10 + imageOffset)) {
+        svgDestX = CARD_FORMAT_WIDTH - (10 + imageOffset);
       }
-      if (svgDestX < 0 + 2.8)
+      if (svgDestX < 0 + imageOffset)
       {
-        svgDestX = 0 + 2.8;
+        svgDestX = 0 + imageOffset;
       }
 
       svgDestY = svgDestY - 5;
-      if (svgDestY > CARD_FORMAT_HEIGHT - 10) {
-        svgDestY = CARD_FORMAT_HEIGHT - 10;
+      if (svgDestY > calcHeight - 10) {
+        svgDestY = calcHeight - 10;
       }
       if (svgDestY < 0)
       {
