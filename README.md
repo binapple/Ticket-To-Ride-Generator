@@ -95,8 +95,8 @@ For building and running the application you need:
 
 #### Running the application locally
 
-For creating high DPI gameboards it is necessary to give the java virtual machine a bigger max heap size of about 10 Gigabyte (`-Xmx10g`).
-When running the application from you IDE check the max heap size settings for the java virtual machine.
+For creating high DPI gameboards, it is necessary to give the Java virtual machine a bigger max heap size of about 10 Gigabyte (`-Xmx10g`).
+When running the application from your IDE, check the max heap size settings for the Java virtual machine.
 
 The backend expects **[Maperitive](http://maperitive.net/)** to be in the following path:
 
@@ -232,10 +232,10 @@ The same approach is used for the Ticket-Cards, but they are not individually st
 As described in the **[Known Bugs](#known-bugs)** section the "Mercator-Projection" is used for changing geographical location data to a two-dimensional map.
 For a more accurate way of placing the train fields this could be done earlier, when creating MapPoints,
 so that all the calculations are also done in the correct coordinate system. 
-For showing the results in the frontend on leaflet geographical locations are necessary, therefore a "reverse Mercator-Projection".
+For showing the results in the frontend on Leaflet geographical locations are necessary, therefore a "reverse Mercator-Projection" is needed.
 Another approach would be to store geographical and "projected" data to each MapPoint or City.
 
-As Maperitive currently only supports one instance per executable file, the creation of the gameboard process is currently not simultaneously runnable.
+As Maperitive currently only supports one instance per executable file, the creation of the gameboard process is not simultaneously runnable.
 This could be solved with different APIs for OSM map rendering, but research on the net found that this may be behind a paywall,
 whereas Maperitive allows big render-sizes and is available as open source.
 
