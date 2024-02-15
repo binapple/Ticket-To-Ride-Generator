@@ -98,12 +98,28 @@ For building and running the application you need:
 For creating high DPI gameboards it is necessary to give the java virtual machine a bigger max heap size of about 8 Gigabyte (`-Xmx8g`).
 When running the application from you IDE check the settings for the java virtual machine.
 
+The backend expects **[Maperitive](http://maperitive.net/)** to be in the following path:
+
+#### Windows
+
+```
+C:/Maperitive-latest/Maperitive
+```
+
+#### Linux
+
+```
+/Maperitive-latest/Maperitive
+```
+
+This can be changed to a custom folder in the [application.properties](./backend/src/main/resources/application.properties) file
+
 There are several ways to run a Spring Boot application on your local machine. One way is to execute the `main` method in the `de.codecentric.springbootsample.Application` class from your IDE.
 
 Alternatively you can use the [Spring Boot Maven plugin](https://docs.spring.io/spring-boot/docs/current/reference/html/build-tool-plugins-maven-plugin.html) like so:
 
 ```shell
-mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xmx8g"
+mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xmx10g"
 ```
 
 ### Frontend
@@ -132,6 +148,8 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
+It is important to note that this project is a simulation and uses a design inspired by the mechanics and concept of the Ticket to Ride board game.
+The rights to the original Ticket to Ride board game belong to their respective owners, and this project does not claim ownership or authorization to utilize any proprietary elements of the original game.
 
 As part of a bachelor thesis this project is implemented as a prototype.
 

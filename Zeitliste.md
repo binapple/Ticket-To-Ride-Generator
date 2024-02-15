@@ -366,14 +366,13 @@ monatliche Arbeitszeit: 40h 51m
 
 **31.01.2024 14:28 - 15:45; (1h 17m)**
 - Verschiedene DIN-A-Formate testen (A0, A1, A2 gute Ergebnisse - A3, A4 eher nicht spielbar);
-
-total bis inklusive Januar 2024: 317h 20m
+ 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Februar 2024
 
-monatliche Arbeitszeit: 
+monatliche Arbeitszeit: 33h 13m
 
 **01.02.2024 11:38 - 17:14; (5h 36m)**
 - DIN-A-Formate, DPI, Bearbeitungsstatus und Name in Map mitspeichern und im Frontend einbauen;
@@ -382,5 +381,28 @@ monatliche Arbeitszeit:
 **02.02.2024 11:52 - 15:27; (3h 35m)**
 - Map-Liste besser gestalten;
 - Map-Zoom responsive machen; 
+
+**03.02.2024 10:58 - 16:02; (5h 4m)**
+- Abschlussbericht schreiben; 
+- Zeitliste formatieren und zusammenrechnen;
+
+**06.02.2024 19:04 - 22:25; (3h 21m)**
+- Anwendungsfall und Klassen-Diagramm erstellen;
+- Städte-Cluster-Minimierung;
+
+**07.02.2024 11:41 - 12:11; (0h 30m)**
+- Abschlussbericht schreiben/formatieren;
+
+**08.02.2024 17:14 - 20:28; (3h 14m)**
+- Abschlussbericht schreiben -> Implementierungsdetails;
+
+**13.02.2024 09:15 - 15:12; (5h 57m)**
+- Statusupdates bei Rendervorgang;
+
+**14.02.2024 11:26 - 14:02; (2h 36m)**
+- Bildergröße der Tickets anpassen; README.md updaten;
+
+totale Arbeitszeit: ~350h 33m
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
