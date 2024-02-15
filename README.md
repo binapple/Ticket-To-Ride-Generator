@@ -95,8 +95,8 @@ For building and running the application you need:
 
 #### Running the application locally
 
-For creating high DPI gameboards it is necessary to give the java virtual machine a bigger max heap size of about 8 Gigabyte (`-Xmx8g`).
-When running the application from you IDE check the settings for the java virtual machine.
+For creating high DPI gameboards it is necessary to give the java virtual machine a bigger max heap size of about 10 Gigabyte (`-Xmx10g`).
+When running the application from you IDE check the max heap size settings for the java virtual machine.
 
 The backend expects **[Maperitive](http://maperitive.net/)** to be in the following path:
 
